@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>사용법</title><style>
+:root{--bg:#fff;--fg:#1f2328;--muted:#656d76;--line:#d0d7de;--soft:#f6f8fa;--accent:#2b5fd9;--quote:#fff8c5}
+@media(prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#8d96a0;--line:#30363d;--soft:#161b22;--accent:#6ea8fe;--quote:#2d2a12}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif}
+.wrap{display:flex;gap:32px;max-width:1100px;margin:0 auto;padding:24px 16px}
+nav{position:sticky;top:16px;align-self:flex-start;width:210px;flex:none;font-size:13px;max-height:calc(100vh - 32px);overflow:auto}
+nav a{display:block;color:var(--muted);text-decoration:none;padding:3px 0}
+nav a:hover{color:var(--accent)}nav a.sub{padding-left:14px}
+main{min-width:0;flex:1}
+h1{font-size:28px;margin:0 0 8px}h2{font-size:21px;margin:40px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+h3{font-size:17px;margin:28px 0 6px}
+code{background:var(--soft);padding:1px 5px;border-radius:4px;font-size:.92em}
+table{border-collapse:collapse;margin:12px 0;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft)}
+blockquote{margin:12px 0;padding:8px 14px;background:var(--quote);border-left:4px solid #d4a72c;border-radius:4px}
+.caption{color:var(--muted);font-size:13px;margin-top:32px}
+.note{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:8px 12px;color:var(--muted);font-size:13px;margin-bottom:16px}
+@media(max-width:760px){.wrap{display:block}nav{display:none}}
+</style></head><body><div class="wrap"><nav><a href="#s1">① 환경 설정  (왼쪽 메뉴 ⚙️ 환경 설정)</a><a href="#s2">② 수집  (📰 후보 리스트 → 🔄 지금 수집)</a><a href="#s3">③ 후보 선정 기준  (이 앱이 기사를 고르는 방법)</a><a class="sub" href="#s4">단계 1. 제외 키워드로 거르기</a><a class="sub" href="#s5">단계 2. 같은 사건 기사 묶기</a><a class="sub" href="#s6">단계 3. 묶음별 점수 계산 (0~100점)</a><a class="sub" href="#s7">단계 4. 후보로 올릴 묶음 자르기</a><a class="sub" href="#s8">단계 5. 사용자 검토</a><a class="sub" href="#s9">결과가 마음에 안 들 때</a><a href="#s10">④ 이메일 보기·편집  (✉️ 이메일 보기·편집)</a><a href="#s11">⑤ 메일 보내기</a></nav><main>
+<h1>📖 사용법</h1>
+<div class="note">이 문서는 <code>views/guide.py</code> 에서 자동 생성되었으며, 본문의 설정 수치는 <strong>기본값</strong> 기준입니다. 실제 값은 앱의 환경 설정 화면에서 확인·변경하세요.</div>
+<p><strong>전체 흐름</strong>: ① 환경 설정 → ② 수집 → ③ 후보 검토(승인/거절) → ④ 이메일 편집 → ⑤ 메일 창 열기</p>
+<p>LLM(AI 모델)은 쓰지 않습니다. 모든 선정은 아래에 설명한 <strong>규칙과 점수</strong>로 이루어지며, 같은 설정이면 항상 같은 결과가 나옵니다.</p>
+<h2 id="s1">① 환경 설정  (왼쪽 메뉴 ⚙️ 환경 설정)</h2>
+<p>처음 한 번만 맞춰 두면 됩니다. 값은 이 컴퓨터의 <code>config.yaml</code>에 저장되고, <strong>저장</strong> 버튼을 눌러야 반영됩니다.</p>
+<table><thead><tr><th>탭</th><th>하는 일</th></tr></thead><tbody><tr><td>수집</td><td>최근 며칠 기사를 볼지, 본문 추출 여부·글자 수 상한, 사이트당 최대 수집 건수</td></tr><tr><td>사이트</td><td>수집할 사이트 목록. 체크로 켜고 끄고, 행을 추가해 RSS 등을 직접 등록</td></tr><tr><td>키워드</td><td><strong>제외 키워드</strong>(걸러낼 단어)와 <strong>포함 키워드</strong>(가산점을 줄 단어)</td></tr><tr><td>후보 선정</td><td>후보 개수·최소 점수·매체당 상한·묶음 유사도·점수 가중치</td></tr><tr><td>이메일</td><td>보내는 사람/받는 사람, 제목 템플릿, 도입·맺음 문구, 요약 글자 수, 항목당 링크 수</td></tr></tbody></table>
+<p>설정을 바꿔도 <strong>다시 수집할 필요가 없습니다.</strong> 후보 리스트는 이미 저장된 기사를 새 설정으로 바로 다시 계산합니다.<br>(단, 수집 기간을 늘리거나 사이트를 추가했다면 다시 수집해야 새 기사가 들어옵니다.)</p>
+<h2 id="s2">② 수집  (📰 후보 리스트 → 🔄 지금 수집)</h2>
+<p>켜져 있는 사이트를 동시에 읽어 기사를 저장합니다. 이미 저장된 기사(같은 주소)는 건너뛰므로 <strong>여러 번 눌러도 중복되지 않습니다.</strong></p>
+<ol><li><strong>기간 제한</strong> — 발행 시각이 최근 <strong>3일</strong>보다 오래된 기사는 버립니다. 발행 시각이 없는 기사는 수집 시각을 기준으로 합니다.</li><li><strong>주소 정리</strong> — <code>utm_</code> 같은 추적 파라미터, <code>#</code> 뒷부분, 끝의 <code>/</code>를 정리해 같은 기사를 하나로 인식합니다.</li><li><strong>본문 추출</strong> — <em>새로 들어온</em> 기사만 본문을 가져와 앞에서 <strong>1500자</strong>까지 저장합니다. 사이트의 robots.txt가 막은 곳과 Google 뉴스 링크(중계 주소)는 건너뛰며, 그럴 땐 RSS 요약을 씁니다.</li><li>사이트 오류(예: HTTP 403 차단)는 화면에 경고로 표시되고 나머지 사이트는 계속 수집합니다.</li></ol>
+<p>저장된 기사는 30일(수집 기간이 더 길면 그 기간)이 지나면 정리되며, <strong>승인한 기사는 지워지지 않습니다.</strong></p>
+<h2 id="s3">③ 후보 선정 기준  (이 앱이 기사를 고르는 방법)</h2>
+<p>수집된 기사는 아래 5단계를 순서대로 거쳐 후보가 됩니다. 화면을 열 때마다 현재 설정으로 다시 계산됩니다.</p>
+<h3 id="s4">단계 1. 제외 키워드로 거르기</h3>
+<ul><li>제목 + RSS 요약에 제외 키워드가 <strong>하나라도</strong> 들어 있으면 후보에서 뺍니다. (현재 제외어: <code>광고, 포토, 부고, 인사</code>)</li><li>대소문자는 구분하지 않고, <strong>글자가 포함되기만 하면</strong> 일치로 봅니다. 예: 제외어 <code>인사</code>는 "인사말", "인사이트"에도 걸립니다. 너무 짧은 단어는 주의하세요.</li><li>설정의 <em>본문에서도 제외 키워드 찾기</em>를 켜면 추출한 본문까지 검사합니다.</li><li>제외된 기사는 후보 리스트의 <strong>제외된 기사 보기</strong>에서 어떤 단어 때문에 빠졌는지 확인할 수 있습니다.</li><li>이미 <strong>승인한 기사는</strong> 나중에 제외어를 추가해도 빠지지 않습니다.</li></ul>
+<h3 id="s5">단계 2. 같은 사건 기사 묶기</h3>
+<ul><li>여러 매체가 같은 소식을 쓰면 한 덩어리(묶음)로 합칩니다. 목록에는 묶음마다 <strong>대표 기사 1건</strong>이 나오고, 나머지는 <em>관련 N건</em>으로 보입니다.</li><li>제목의 3글자 단위 조각이 얼마나 겹치는지(제목끼리, 또는 제목+요약 앞 200자끼리)를 0~1로 계산해 <strong>0.5 이상</strong>이면 같은 묶음입니다. 값이 낮을수록 더 많이 묶입니다.</li><li>묶음 안의 어느 기사와 비슷해도 합류합니다.</li><li>한계: 글자 기반이라 <strong>한국어 기사와 영어 기사는 같은 사건이어도 묶이지 않습니다.</strong></li><li>대표 기사는 ① 이미 승인한 기사 → ② 포함 키워드 점수가 높은 기사 → ③ 본문이 긴 기사 → ④ 최신 기사 순으로 고릅니다.</li></ul>
+<h3 id="s6">단계 3. 묶음별 점수 계산 (0~100점)</h3>
+<p>점수는 세 가지 부분 점수의 <strong>가중 평균</strong>입니다. 현재 가중치는 신선도 0.4 : 키워드 0.4 : 화제성 0.2이며,<br>합계가 1이 아니어도 비율로 자동 환산됩니다. (현재 비율 = 신선도 40% · 키워드 40% · 화제성 20%)</p>
+<p><code>점수 = (신선도×가중치 + 키워드×가중치 + 화제성×가중치) ÷ 가중치 합계</code></p>
+<table><thead><tr><th>부분 점수</th><th>계산 방법</th></tr></thead><tbody><tr><td><strong>신선도</strong></td><td>묶음에서 <em>가장 최근</em> 기사 기준. 방금 나온 기사는 100점, 수집 기간(3일 = 72시간)이 다 지났으면 0점으로 <strong>시간에 비례해 줄어듭니다.</strong> 예: 기간이 3일이면 하루 지난 기사는 약 67점.</td></tr><tr><td><strong>키워드</strong></td><td>포함 키워드가 <strong>제목</strong>에 있으면 그 키워드의 가산점 전부, <strong>요약·본문에만</strong> 있으면 <strong>절반</strong>을 더합니다. 같은 키워드는 기사당 한 번만 셉니다. 묶음 안에서 가장 높은 기사 값을 쓰고 <strong>100점이 상한</strong>입니다. 포함 키워드가 하나도 없으면 0점입니다.</td></tr><tr><td><strong>화제성</strong></td><td>같은 사건을 다룬 기사 수와 매체 수. <code>(기사 수 − 1) × 20 + (매체 수 − 1) × 15</code>, 상한 100점. 한 곳만 쓴 기사는 0점, 3개 매체가 쓰면 70점입니다.</td></tr></tbody></table>
+<p>예시: 제목에 가산점 10짜리 키워드 2개가 들어 있으면 키워드 20점, 2개 매체가 쓴 1시간 전 기사(기간 3일)라면<br>신선도 약 99 · 화제성 35 → 비율 4:6:2 기준 점수 ≈ (99×4 + 20×6 + 35×2) ÷ 12 ≈ 49점.</p>
+<blockquote>💡 <strong>키워드 점수의 영향이 큽니다.</strong> 가산점이 작게(예: 10점) 잡혀 있으면 키워드 부분 점수가 낮아서 신선도·화제성이 순위를 좌우합니다. 특정 주제를 확실히 우대하려면 그 키워드의 가산점을 올리거나(예: 30~50) 키워드 가중치를 높이세요.</blockquote>
+<h3 id="s7">단계 4. 후보로 올릴 묶음 자르기</h3>
+<p>점수가 높은 묶음부터 차례로 훑으면서 아래 조건을 통과하면 <strong>후보</strong>로 표시합니다.</p>
+<ol><li>점수가 <strong>최소 점수 20점 이상</strong></li><li>그 묶음 대표 기사의 매체가 이미 <strong>5건</strong>을 후보로 올렸다면 건너뜀 (매체당 상한, 0이면 제한 없음)</li><li>후보가 <strong>최대 30건</strong>에 도달하면 중단</li></ol>
+<p>예외: <strong>승인한 묶음은 항상 후보</strong>이고(개수에 포함되지 않음), <strong>거절한 묶음은 후보에서 빠집니다.</strong><br>후보 리스트의 <em>후보만 보기</em>를 끄면 기준에 못 미친 기사도 점수순으로 볼 수 있습니다.</p>
+<h3 id="s8">단계 5. 사용자 검토</h3>
+<ul><li><strong>✅ 승인</strong>: 이메일에 넣을 기사로 확정합니다. 묶음의 대표 기사에 기록됩니다.</li><li><strong>🚫 거절</strong>: 후보에서 뺍니다. <em>거절 취소</em>로 되돌릴 수 있습니다.</li><li>결정은 기사 단위로 저장되므로 설정을 바꾸거나 다시 수집해도 유지됩니다.</li><li>점수 상세(신선도·키워드·화제성)는 각 항목의 <em>본문 · 관련 기사 · 점수 상세</em>에서 볼 수 있습니다.</li></ul>
+<h3 id="s9">결과가 마음에 안 들 때</h3>
+<table><thead><tr><th>증상</th><th>조정 방법</th></tr></thead><tbody><tr><td>원하지 않는 기사가 많다</td><td>제외 키워드 추가, 해당 사이트 끄기, 최소 점수 올리기</td></tr><tr><td>원하는 주제가 아래쪽에 있다</td><td>포함 키워드 추가/가산점 올리기, 키워드 가중치 올리기</td></tr><tr><td>같은 소식이 여러 줄로 나온다</td><td>묶음 유사도를 낮추기 (예: 0.5 → 0.35)</td></tr><tr><td>전혀 다른 기사가 한 묶음이 된다</td><td>묶음 유사도를 높이기</td></tr><tr><td>한 매체 기사만 가득하다</td><td>매체당 최대 후보 수 낮추기</td></tr><tr><td>오래된 기사가 위에 있다</td><td>신선도 가중치 올리기, 수집 기간 줄이기</td></tr><tr><td>후보가 너무 적다</td><td>최소 점수 낮추기, 최대 후보 수 올리기, <em>후보만 보기</em> 끄기</td></tr></tbody></table>
+<h2 id="s10">④ 이메일 보기·편집  (✉️ 이메일 보기·편집)</h2>
+<p>후보 리스트에서 <strong>✉️ 이메일 만들기</strong>를 누르면 <em>승인한 기사만</em> 담은 초안이 만들어집니다.</p>
+<ul><li><strong>항목 구성</strong>: 분류 순서(AI → IT → 핫 이슈)로 정렬되고, 같은 분류 안에서는 점수 순입니다.</li><li><strong>요약 만들기</strong>: 추출한 본문(없으면 RSS 요약)의 앞쪽 문장부터 <strong>220자</strong> 안에서 잘라 넣습니다. AI가 쓴 요약이 아니라 기사 앞부분을 그대로 줄인 것이므로 어색하면 직접 고치세요.</li><li><strong>링크</strong>: 대표 기사 + 관련 기사를 항목당 최대 <strong>3개</strong> 넣습니다.</li><li><strong>편집</strong>: 왼쪽에서 제목·보내는/받는 사람·도입/맺음 문구와 항목별 포함 여부·제목·요약·링크를 고치면 오른쪽 미리보기에 바로 반영됩니다.</li><li><strong>💾 저장</strong>: 편집 내용을 저장합니다. 나중에 다시 열어도 유지되고, 승인 목록이 바뀌면 바뀐 항목만 추가·제거됩니다. 처음부터 다시 만들려면 <em>🔁 초안 다시 만들기</em>.</li></ul>
+<h2 id="s11">⑤ 메일 보내기</h2>
+<table><thead><tr><th>버튼</th><th>동작</th></tr></thead><tbody><tr><td>📨 <strong>메일 창 열기</strong></td><td>메일을 <code>.eml</code> 파일로 만들어 <strong>기본 메일 프로그램</strong>으로 엽니다. 서식(HTML)이 유지됩니다. 받는 사람·보내는 사람·제목이 채워집니다.</td></tr><tr><td>✉️ mailto (텍스트)</td><td>서식 없는 텍스트 본문으로 메일 창을 엽니다. 본문이 길면 잘립니다.</td></tr><tr><td>⬇️ .eml / .html</td><td>파일로 내려받습니다. HTML은 열어서 내용을 복사해 메일에 붙여 넣을 수 있습니다.</td></tr></tbody></table>
+<ul><li>이 앱은 <strong>메일을 직접 발송하지 않습니다.</strong> 메일 프로그램에서 내용을 확인하고 직접 보내기를 누르세요.</li><li>보내는 사람은 메일 프로그램에 등록된 계정과 다르면 무시될 수 있습니다.</li><li>macOS 메일 앱은 <code>.eml</code>을 새 작성 창이 아닌 열람 창으로 여는 경우가 있습니다. 이때는 mailto 또는 HTML 복사를 이용하세요.</li></ul>
+<p class="caption">설정·기사·메일 파일은 모두 이 컴퓨터에 저장됩니다.</p>
+</main></div></body></html>

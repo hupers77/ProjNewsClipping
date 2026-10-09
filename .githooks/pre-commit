@@ -1,0 +1,7 @@
+#!/bin/sh
+# guide.py / 빌드 스크립트가 바뀐 커밋이면 guide.html 을 다시 만들어 함께 커밋한다.
+# 사용: git config core.hooksPath .githooks
+if git diff --cached --name-only | grep -qE '^(views/guide\.py|tools/build_guide\.py)$'; then
+  uv run python tools/build_guide.py || exit 1
+  git add src/web_html/guide.html
+fi
