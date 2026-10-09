@@ -4,6 +4,8 @@
 @media(prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#8d96a0;--line:#30363d;--soft:#161b22;--accent:#6ea8fe;--quote:#2d2a12}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif}
+.top{display:flex;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto;padding:14px 16px;border-bottom:1px solid var(--line);font-weight:700}
+.top a{font-weight:400;font-size:14px;color:var(--accent);text-decoration:none}
 .wrap{display:flex;gap:32px;max-width:1100px;margin:0 auto;padding:24px 16px}
 nav{position:sticky;top:16px;align-self:flex-start;width:210px;flex:none;font-size:13px;max-height:calc(100vh - 32px);overflow:auto}
 nav a{display:block;color:var(--muted);text-decoration:none;padding:3px 0}
@@ -19,7 +21,7 @@ blockquote{margin:12px 0;padding:8px 14px;background:var(--quote);border-left:4p
 .caption{color:var(--muted);font-size:13px;margin-top:32px}
 .note{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:8px 12px;color:var(--muted);font-size:13px;margin-bottom:16px}
 @media(max-width:760px){.wrap{display:block}nav{display:none}}
-</style></head><body><div class="wrap"><nav><a href="#s1">① 환경 설정  (왼쪽 메뉴 ⚙️ 환경 설정)</a><a href="#s2">② 수집  (📰 후보 리스트 → 🔄 지금 수집)</a><a href="#s3">③ 후보 선정 기준  (이 앱이 기사를 고르는 방법)</a><a class="sub" href="#s4">단계 1. 제외 키워드로 거르기</a><a class="sub" href="#s5">단계 2. 같은 사건 기사 묶기</a><a class="sub" href="#s6">단계 3. 묶음별 점수 계산 (0~100점)</a><a class="sub" href="#s7">단계 4. 후보로 올릴 묶음 자르기</a><a class="sub" href="#s8">단계 5. 사용자 검토</a><a class="sub" href="#s9">결과가 마음에 안 들 때</a><a href="#s10">④ 이메일 보기·편집  (✉️ 이메일 보기·편집)</a><a href="#s11">⑤ 메일 보내기</a></nav><main>
+</style></head><body><div class="top"><span>📰 뉴스 클리핑 사이트</span><a href="https://github.com/hupers77/ProjNewsClipping" target="_blank" rel="noopener">GitHub</a></div><div class="wrap"><nav><a href="#s1">① 환경 설정  (왼쪽 메뉴 ⚙️ 환경 설정)</a><a href="#s2">② 수집  (📰 후보 리스트 → 🔄 지금 수집)</a><a href="#s3">③ 후보 선정 기준  (이 앱이 기사를 고르는 방법)</a><a class="sub" href="#s4">단계 1. 제외 키워드로 거르기</a><a class="sub" href="#s5">단계 2. 같은 사건 기사 묶기</a><a class="sub" href="#s6">단계 3. 묶음별 점수 계산 (0~100점)</a><a class="sub" href="#s7">단계 4. 후보로 올릴 묶음 자르기</a><a class="sub" href="#s8">단계 5. 사용자 검토</a><a class="sub" href="#s9">결과가 마음에 안 들 때</a><a href="#s10">④ 이메일 보기·편집  (✉️ 이메일 보기·편집)</a><a href="#s11">⑤ 메일 보내기</a></nav><main>
 <h1>📖 사용법</h1>
 <div class="note">이 문서는 <code>views/guide.py</code> 에서 자동 생성되었으며, 본문의 설정 수치는 <strong>기본값</strong> 기준입니다. 실제 값은 앱의 환경 설정 화면에서 확인·변경하세요.</div>
 <p><strong>전체 흐름</strong>: ① 환경 설정 → ② 수집 → ③ 후보 검토(승인/거절) → ④ 이메일 편집 → ⑤ 메일 창 열기</p>

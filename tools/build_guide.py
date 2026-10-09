@@ -175,6 +175,8 @@ CSS = """
 @media(prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#8d96a0;--line:#30363d;--soft:#161b22;--accent:#6ea8fe;--quote:#2d2a12}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif}
+.top{display:flex;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto;padding:14px 16px;border-bottom:1px solid var(--line);font-weight:700}
+.top a{font-weight:400;font-size:14px;color:var(--accent);text-decoration:none}
 .wrap{display:flex;gap:32px;max-width:1100px;margin:0 auto;padding:24px 16px}
 nav{position:sticky;top:16px;align-self:flex-start;width:210px;flex:none;font-size:13px;max-height:calc(100vh - 32px);overflow:auto}
 nav a{display:block;color:var(--muted);text-decoration:none;padding:3px 0}
@@ -191,6 +193,14 @@ blockquote{margin:12px 0;padding:8px 14px;background:var(--quote);border-left:4p
 .note{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:8px 12px;color:var(--muted);font-size:13px;margin-bottom:16px}
 @media(max-width:760px){.wrap{display:block}nav{display:none}}
 """
+
+
+SITE_TITLE = "뉴스 클리핑 사이트"
+GITHUB_URL = "https://github.com/hupers77/ProjNewsClipping"
+TOP_BAR = (
+    f'<div class="top"><span>📰 {SITE_TITLE}</span>'
+    f'<a href="{GITHUB_URL}" target="_blank" rel="noopener">GitHub</a></div>'
+)
 
 
 def render_page(blocks: list[Block]) -> str:
@@ -223,7 +233,7 @@ def render_page(blocks: list[Block]) -> str:
         '<!DOCTYPE html>\n<html lang="ko"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         f"<title>{html.escape(page_title)}</title>"
-        f'<style>{CSS}</style></head><body><div class="wrap"><nav>{nav}</nav>'
+        f'<style>{CSS}</style></head><body>{TOP_BAR}<div class="wrap"><nav>{nav}</nav>'
         f"<main>\n{main_html}\n</main></div></body></html>\n"
     )
 
