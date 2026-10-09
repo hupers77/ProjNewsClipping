@@ -164,3 +164,32 @@ def test_email_draft_roundtrip_and_render():
     eml = build_eml(d2, NOW)
     assert b"X-Unsent: 1" in eml
     assert mailto_url(d2).startswith("mailto:?subject=")
+
+
+def test_default_sources_and_keywords_from_blogcreator():
+    s = config.from_dict({})
+    assert {x.type for x in s.sources} == {
+        "rss",
+        "sitemap",
+        "google_news",
+        "hackernews",
+        "trends_rss",
+    }
+    assert s.filters.exclude_keywords == ["광고", "포토", "부고", "인사"]
+    words = [k.word for k in s.filters.include_keywords]
+    assert "스마트팩토리" in words and "MES" in words and len(words) == len(set(words))
+
+
+def test_parse_sitemap():
+    xml = (
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">'
+        "<url><loc>https://a.com/1?utm_a=1</loc><news:news><news:title>스마트공장 소식</news:title>"
+        f"<news:publication_date>{(datetime.now(UTC) - timedelta(hours=1)).isoformat()}"
+        "</news:publication_date></news:news></url></urlset>"
+    ).encode()
+    from newsclip.collector import parse_sitemap
+
+    src = Source("h", "H", "sitemap", "https://a.com/sitemap.xml")
+    items = parse_sitemap(xml, src, datetime.now(UTC) - timedelta(days=1), 10)
+    assert items[0]["title"] == "스마트공장 소식" and items[0]["url"] == "https://a.com/1"

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import calendar
 import logging
+import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -24,6 +25,8 @@ logger = logging.getLogger(__name__)
 USER_AGENT = "ProjNewsClipping/0.1 (+personal news clipping)"
 GNEWS_URL = "https://news.google.com/rss/search"
 MAX_SUMMARY_CHARS = 2000
+MAX_SITEMAP_BYTES = 8_000_000
+HN_API = "https://hacker-news.firebaseio.com/v0"
 
 
 @dataclass
@@ -83,18 +86,137 @@ def parse_feed(content: bytes, source: Source, since: datetime, max_items: int) 
     return items[:max_items]
 
 
+def _local(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def _child_text(element: ET.Element, name: str) -> str | None:
+    for node in element.iter():
+        if _local(node.tag) == name and node.text and node.text.strip():
+            return node.text.strip()
+    return None
+
+
+def parse_sitemap(content: bytes, source: Source, since: datetime, max_items: int) -> list[dict]:
+    """뉴스 사이트맵(<news:title>, <news:publication_date>) → 저장용 dict 목록."""
+    if len(content) > MAX_SITEMAP_BYTES or b"<!DOCTYPE" in content[:2000] or b"<!ENTITY" in content:
+        raise ValueError("사이트맵이 너무 크거나 허용되지 않는 형식입니다")
+    try:
+        root = ET.fromstring(content)  # noqa: S314 - DOCTYPE/ENTITY 는 위에서 거절
+    except ET.ParseError:
+        raise ValueError("사이트맵 파싱 실패 (XML 이 아님)") from None
+    if _local(root.tag) == "sitemapindex":
+        raise ValueError("사이트맵 인덱스입니다 — 기사(news) 사이트맵 주소를 지정하세요")
+    if _local(root.tag) != "urlset":
+        raise ValueError("사이트맵 형식이 아닙니다")
+    items: list[dict] = []
+    for node in root:
+        loc, title = _child_text(node, "loc"), _child_text(node, "title")
+        if _local(node.tag) != "url" or not loc or not title:
+            continue
+        published = _parse_iso(
+            _child_text(node, "publication_date") or _child_text(node, "lastmod")
+        )
+        if published is not None and published < since:
+            continue
+        url = normalize_url(loc)
+        items.append(
+            {
+                "url_hash": url_hash(url),
+                "url": url,
+                "title": strip_html(title),
+                "summary": "",
+                "source_id": source.id,
+                "source_name": source.name,
+                "category": source.category,
+                "lang": source.lang,
+                "published_at": published.isoformat() if published else None,
+            }
+        )
+    if not items and len(root):
+        raise ValueError("사이트맵에 기사 제목(news:title)이 없습니다 — 뉴스 사이트맵이 아닙니다")
+    items.sort(key=lambda i: i["published_at"] or "", reverse=True)
+    return items[:max_items]
+
+
+def _parse_iso(text: str | None) -> datetime | None:
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed.astimezone(UTC) if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def fetch_hackernews(
+    client: httpx.Client, source: Source, since: datetime, max_items: int
+) -> list[dict]:
+    """Hacker News topstories 중 추천 수가 min_points 이상인 글."""
+    ids = client.get(f"{HN_API}/topstories.json").raise_for_status().json()[: source.top_n]
+
+    def one(item_id: int) -> dict | None:
+        try:
+            data = client.get(f"{HN_API}/item/{item_id}.json").raise_for_status().json()
+        except httpx.HTTPError:
+            return None
+        return data if isinstance(data, dict) else None
+
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        raw = list(pool.map(one, ids))
+    if ids and all(r is None for r in raw):
+        raise httpx.TransportError("항목 조회 전부 실패")
+    items: list[dict] = []
+    for data in raw:
+        if not data or data.get("type") != "story" or data.get("dead") or data.get("deleted"):
+            continue
+        title = data.get("title")
+        if int(data.get("score", 0)) < source.min_points or not title:
+            continue
+        published = datetime.fromtimestamp(int(data["time"]), tz=UTC)
+        if published < since:
+            continue
+        url = normalize_url(data.get("url") or f"https://news.ycombinator.com/item?id={data['id']}")
+        items.append(
+            {
+                "url_hash": url_hash(url),
+                "url": url,
+                "title": strip_html(title),
+                "summary": "",
+                "source_id": source.id,
+                "source_name": source.name,
+                "category": source.category,
+                "lang": source.lang,
+                "published_at": published.isoformat(),
+            }
+        )
+    return items[:max_items]
+
+
 def _fetch_source(
     client: httpx.Client, source: Source, since: datetime, cfg: CollectSettings
 ) -> tuple[SourceResult, list[dict]]:
     result = SourceResult(source.name)
     try:
-        if source.type == "google_news":
-            params = {"q": source.url, "hl": source.lang, "gl": "KR", "ceid": f"KR:{source.lang}"}
-            resp = client.get(GNEWS_URL, params=params)
+        if source.type == "hackernews":
+            items = fetch_hackernews(client, source, since, cfg.max_items_per_source)
         else:
-            resp = client.get(source.url)
-        resp.raise_for_status()
-        items = parse_feed(resp.content, source, since, cfg.max_items_per_source)
+            if source.type == "google_news":
+                gl = "KR" if source.lang == "ko" else "US"
+                params = {
+                    "q": source.url,
+                    "hl": source.lang,
+                    "gl": gl,
+                    "ceid": f"{gl}:{source.lang}",
+                }
+                resp = client.get(GNEWS_URL, params=params)
+            else:
+                resp = client.get(source.url)
+            resp.raise_for_status()
+            if source.type == "sitemap":
+                items = parse_sitemap(resp.content, source, since, cfg.max_items_per_source)
+            else:
+                items = parse_feed(resp.content, source, since, cfg.max_items_per_source)
     except httpx.HTTPStatusError as exc:
         result.error = f"HTTP {exc.response.status_code}"
         return result, []
@@ -178,7 +300,7 @@ def collect(
         follow_redirects=True,
     )
     try:
-        sources = [s for s in settings.sources if s.enabled and s.url]
+        sources = [s for s in settings.sources if s.enabled and (s.url or s.type == "hackernews")]
         if progress:
             progress(f"{len(sources)}개 소스 수집 중…")
         with ThreadPoolExecutor(max_workers=6) as pool:

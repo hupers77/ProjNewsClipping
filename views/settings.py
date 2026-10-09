@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from newsclip import config, paths
-from newsclip.config import Keyword, Source
+from newsclip.config import SOURCE_TYPES, Keyword, Source
 
 settings = config.load()
 
@@ -40,7 +40,7 @@ with tab_collect:
 
 with tab_sources:
     st.write(
-        "체크를 끄면 수집하지 않습니다. 유형: `rss`(피드 주소) 또는 `google_news`(주소 칸에 검색어)."
+        "체크를 끄면 수집하지 않습니다. 유형: `rss`·`sitemap`·`trends_rss`(주소), `google_news`(주소 칸에 검색어), `hackernews`(주소 불필요, 상위 N건·최소 추천 수)."
     )
     df = pd.DataFrame([vars(s) for s in settings.sources])
     edited = st.data_editor(
@@ -51,15 +51,15 @@ with tab_sources:
         column_config={
             "id": st.column_config.TextColumn("ID", help="영문/숫자 (중복 불가)", required=True),
             "name": st.column_config.TextColumn("이름", required=True),
-            "type": st.column_config.SelectboxColumn(
-                "유형", options=["rss", "google_news"], required=True
-            ),
+            "type": st.column_config.SelectboxColumn("유형", options=SOURCE_TYPES, required=True),
             "url": st.column_config.TextColumn("주소 / 검색어"),
             "category": st.column_config.SelectboxColumn(
                 "분류", options=["ai", "it", "hot"], required=True
             ),
             "lang": st.column_config.SelectboxColumn("언어", options=["ko", "en"]),
             "enabled": st.column_config.CheckboxColumn("사용"),
+            "top_n": st.column_config.NumberColumn("HN 상위 N", min_value=1, step=1),
+            "min_points": st.column_config.NumberColumn("HN 최소 추천", min_value=0, step=10),
         },
     )
 
