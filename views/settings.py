@@ -41,9 +41,7 @@ with tab_collect:
 with tab_sources:
     st.write(
         "체크를 끄면 수집하지 않습니다. 유형: `rss`·`sitemap`·`trends_rss`(주소), `google_news`(주소 칸에 검색어), `hackernews`(주소 불필요). "
-        "**HN** = Hacker News(해커뉴스, 개발자 커뮤니티 뉴스 사이트)입니다. "
-        "`HN 상위 N`은 인기순 상위 몇 건까지 볼지, `HN 최소 추천`은 추천(점수)이 이 값 이상인 글만 가져온다는 뜻이며, "
-        "유형이 hackernews인 행에만 적용됩니다."
+        "`HN 상위 N`: 인기순 상위 몇 건까지 볼지. `HN 최소 추천`: 추천(점수)이 이 값 이상인 글만 가져옵니다."
     )
     df = pd.DataFrame([vars(s) for s in settings.sources])
     edited = st.data_editor(
