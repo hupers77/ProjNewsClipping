@@ -203,8 +203,10 @@ def _fetch_source(
         else:
             if source.type == "google_news":
                 gl = "KR" if source.lang == "ko" else "US"
+                # 관련도순 결과에는 오래된 기사가 섞이므로 수집 기간으로 한정한다
+                query = source.url if "when:" in source.url else f"{source.url} when:{cfg.days}d"
                 params = {
-                    "q": source.url,
+                    "q": query,
                     "hl": source.lang,
                     "gl": gl,
                     "ceid": f"{gl}:{source.lang}",
