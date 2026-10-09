@@ -1,0 +1,5 @@
+[server]
+port = 8520
+
+[browser]
+gatherUsageStats = false

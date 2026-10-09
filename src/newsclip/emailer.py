@@ -20,6 +20,8 @@ from newsclip.text import summarize
 
 CATEGORY_LABELS = {"ai": "AI", "it": "IT", "hot": "핫 이슈"}
 CATEGORY_ORDER = ("ai", "it", "hot")
+MIN_WIDTH = 640  # 메일 본문 최소 너비(px)
+MAX_WIDTH = MIN_WIDTH * 2  # 최대 너비는 최소의 2배 — 그 사이에서 창 크기에 맞춰 가변
 MAILTO_LIMIT = 1800  # 일부 메일 클라이언트(Windows)의 mailto 길이 한계 대비
 
 
@@ -124,8 +126,9 @@ def render_html(d: Draft) -> str:
     parts = [
         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
         'style="background:#f4f5f7;"><tr><td align="center" style="padding:24px 12px;">'
-        '<table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" '
-        'style="max-width:640px;width:100%;background:#ffffff;border-radius:8px;'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
+        f'style="min-width:{MIN_WIDTH}px;max-width:{MAX_WIDTH}px;width:100%;'
+        "background:#ffffff;border-radius:8px;"
         "font-family:-apple-system,'Apple SD Gothic Neo','Malgun Gothic',Arial,sans-serif;"
         'color:#222;">'
         '<tr><td style="padding:28px 28px 8px;"><div style="font-size:22px;font-weight:700;">'

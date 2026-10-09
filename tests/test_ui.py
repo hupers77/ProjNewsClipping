@@ -62,3 +62,20 @@ def test_app_sidebar_links_and_version():
         "소스 보기 : [GitHub]" in text and "개발자 블로그 : [https://blog.naver.com/hupers]" in text
     )
     assert any("최종 개발 버전·일자 : v" in c.value for c in at.sidebar.caption)
+
+
+def test_streamlit_server_port_is_8520():
+    import tomllib
+
+    cfg = tomllib.loads((ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8"))
+    assert cfg["server"]["port"] == 8520
+
+
+def test_make_email_button_is_green_only_when_approved():
+    _seed()
+    at = AppTest.from_file(str(ROOT / "views/candidates.py"), default_timeout=30).run()
+    assert not any(".st-key-make_email" in m.value for m in at.markdown)
+    next(b for b in at.button if b.label == "✅ 승인").click()
+    at.run()
+    assert any(".st-key-make_email" in m.value for m in at.markdown)
+    assert any(b.key == "make_email" and not b.disabled for b in at.button)

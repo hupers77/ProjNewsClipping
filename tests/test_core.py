@@ -195,3 +195,12 @@ def test_parse_sitemap():
     src = Source("h", "H", "sitemap", "https://a.com/sitemap.xml")
     items = parse_sitemap(xml, src, datetime.now(UTC) - timedelta(days=1), 10)
     assert items[0]["title"] == "스마트공장 소식" and items[0]["url"] == "https://a.com/1"
+
+
+def test_email_width_is_fluid_between_min_and_double():
+    from newsclip.emailer import MAX_WIDTH, MIN_WIDTH, Draft
+
+    html = render_html(Draft("s", "", "", ""))
+    assert MAX_WIDTH == MIN_WIDTH * 2 == 1280
+    assert "min-width:640px;max-width:1280px;width:100%" in html
+    assert 'width="640"' not in html

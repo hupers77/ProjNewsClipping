@@ -6,7 +6,7 @@
 
 ```bash
 uv sync
-uv run streamlit run app.py
+uv run streamlit run app.py   # http://localhost:8520 (포트는 .streamlit/config.toml)
 ```
 
 ## 화면

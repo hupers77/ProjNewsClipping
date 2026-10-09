@@ -30,7 +30,7 @@ def _local(dt: datetime) -> str:
 
 
 top = st.columns([1.3, 1.3, 3])
-if top[0].button("🔄 지금 수집", type="primary", use_container_width=True):
+if top[0].button("🔄 지금 수집", type="primary", width="stretch"):
     with st.status("기사를 수집하는 중…", expanded=True) as status:
         report = collect(settings, store, progress=st.write)
         store.purge_older_than(datetime.now(UTC) - timedelta(days=max(30, settings.collect.days)))
@@ -45,8 +45,18 @@ if top[0].button("🔄 지금 수집", type="primary", use_container_width=True)
 result = review(settings, store)
 approved = [c for c in result.candidates if c.decision == APPROVED]
 
+if approved:  # 승인된 기사가 있어 이메일을 만들 수 있으면 녹색으로 강조
+    st.markdown(
+        "<style>.st-key-make_email button{background:#1f9d55;border-color:#1f9d55;color:#fff}"
+        ".st-key-make_email button:hover{background:#17804a;border-color:#17804a;color:#fff}"
+        "</style>",
+        unsafe_allow_html=True,
+    )
 if top[1].button(
-    f"✉️ 이메일 만들기 ({len(approved)})", disabled=not approved, use_container_width=True
+    f"✉️ 이메일 만들기 ({len(approved)})",
+    key="make_email",
+    disabled=not approved,
+    width="stretch",
 ):
     st.switch_page("views/email.py")
 top[2].caption(
@@ -126,7 +136,7 @@ for c in shown:
                     key=f"un{rep.id}",
                     on_click=_decide,
                     args=(c, PENDING),
-                    use_container_width=True,
+                    width="stretch",
                 )
             else:
                 st.button(
@@ -135,7 +145,7 @@ for c in shown:
                     type="primary",
                     on_click=_decide,
                     args=(c, APPROVED),
-                    use_container_width=True,
+                    width="stretch",
                 )
                 if c.decision == REJECTED:
                     st.button(
@@ -143,7 +153,7 @@ for c in shown:
                         key=f"un{rep.id}",
                         on_click=_decide,
                         args=(c, PENDING),
-                        use_container_width=True,
+                        width="stretch",
                     )
                 else:
                     st.button(
@@ -151,7 +161,7 @@ for c in shown:
                         key=f"no{rep.id}",
                         on_click=_decide,
                         args=(c, REJECTED),
-                        use_container_width=True,
+                        width="stretch",
                     )
 
 if result.candidates and not shown:

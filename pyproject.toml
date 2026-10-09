@@ -1,6 +1,6 @@
 [project]
 name = "projnewsclipping"
-version = "0.1.0"
+version = "0.9"
 description = "뉴스 기사를 취합해 후보를 고르고 이메일 양식으로 만들어 주는 Streamlit 앱"
 readme = "README.md"
 requires-python = ">=3.11"

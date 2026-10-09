@@ -6,7 +6,6 @@ from datetime import datetime
 
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 from newsclip import config
 from newsclip.emailer import (
@@ -88,7 +87,7 @@ with edit_col:
                 ),
                 num_rows="dynamic",
                 hide_index=True,
-                use_container_width=True,
+                width="stretch",
                 key=f"em_l{it.article_id}",
                 column_config={
                     "title": st.column_config.TextColumn("링크 제목"),
@@ -108,18 +107,18 @@ current = Draft(subject, recipients, intro, outro, sender, items)
 
 with preview_col:
     st.subheader("미리보기")
-    components.html(render_html(current), height=720, scrolling=True)
+    st.iframe(render_html(current), height=720)
 
 st.divider()
 actions = st.columns(5)
-if actions[0].button("💾 저장", use_container_width=True):
+if actions[0].button("💾 저장", width="stretch"):
     store.set_kv(KEY, draft_to_dict(current))
     st.toast("저장했습니다.")
 
 if actions[1].button(
     "📨 메일 창 열기",
     type="primary",
-    use_container_width=True,
+    width="stretch",
     help="기본 메일 클라이언트에서 새 메일 창(HTML 본문)을 엽니다",
 ):
     store.set_kv(KEY, draft_to_dict(current))
@@ -133,7 +132,7 @@ if actions[1].button(
 actions[2].link_button(
     "✉️ mailto (텍스트)",
     mailto_url(current),
-    use_container_width=True,
+    width="stretch",
     help="HTML 서식 없이 텍스트 본문만 담아 메일 창을 엽니다 (길면 잘림)",
 )
 actions[3].download_button(
@@ -141,14 +140,14 @@ actions[3].download_button(
     data=build_eml(current, datetime.now().astimezone()),
     file_name="clipping.eml",
     mime="message/rfc822",
-    use_container_width=True,
+    width="stretch",
 )
 actions[4].download_button(
     "⬇️ .html",
     data=render_html(current),
     file_name="clipping.html",
     mime="text/html",
-    use_container_width=True,
+    width="stretch",
 )
 
 with st.expander("텍스트 본문 보기 / 복사"):
