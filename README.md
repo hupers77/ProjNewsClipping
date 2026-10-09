@@ -34,3 +34,15 @@ uv run streamlit run app.py
 ```bash
 uv run ruff check . && uv run ruff format --check . ; uv run pytest
 ```
+
+## 사용법 HTML (Python 없이 열기)
+
+`src/web_html/guide.html` 을 브라우저로 열면 사용법 문서를 볼 수 있습니다. 이 파일은 `views/guide.py`(원본)에서 생성됩니다.
+
+```bash
+uv run python tools/build_guide.py            # guide.html 생성
+uv run python tools/build_guide.py --watch    # guide.py 를 고칠 때마다 자동 재생성
+git config core.hooksPath .githooks           # (1회) guide.py 를 커밋하면 guide.html 도 자동 갱신
+```
+
+원본과 다르면 `pytest`(`tests/test_guide_html.py`)가 실패합니다. guide.html 의 설정 수치는 기본값 기준입니다.
