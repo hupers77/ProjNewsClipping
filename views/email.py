@@ -27,7 +27,7 @@ from newsclip.review import review
 from newsclip.store import APPROVED, Store
 
 KEY = "email_draft"
-PANEL_HEIGHT = 760  # 편집·미리보기 패널 높이(px)
+PANEL_HEIGHT = 960  # 편집·미리보기 패널 높이(px)
 settings = config.load()
 store = Store()
 
@@ -63,7 +63,7 @@ head[1].button(
     help="편집한 내용을 버리고 승인 목록으로 처음부터 다시 만듭니다",
 )
 
-# 미리보기가 가로 스크롤 없이 보이도록 편집 영역은 좁게(1:2), 사이드바·여백도 줄인다
+# 미리보기가 가로 스크롤 없이 보이도록 편집 영역은 좁게(1:1.6), 사이드바·여백도 줄인다
 st.markdown(
     """
 <style>
@@ -73,7 +73,7 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-edit_col, preview_col = st.columns([1, 2], gap="medium")
+edit_col, preview_col = st.columns([1, 1.6], gap="medium")
 
 with edit_col:
     st.subheader("편집")
