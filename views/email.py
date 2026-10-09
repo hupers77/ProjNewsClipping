@@ -27,6 +27,7 @@ from newsclip.review import review
 from newsclip.store import APPROVED, Store
 
 KEY = "email_draft"
+PANEL_HEIGHT = 760  # 편집·미리보기 패널 높이(px)
 settings = config.load()
 store = Store()
 
@@ -76,48 +77,51 @@ edit_col, preview_col = st.columns([1, 2], gap="medium")
 
 with edit_col:
     st.subheader("편집")
-    subject = st.text_input("제목", draft.subject, key="em_subject")
-    sender = st.text_input(
-        "보내는 사람", draft.sender, key="em_from", placeholder="홍길동 <me@example.com>"
-    )
-    recipients = st.text_input(
-        "받는 사람", draft.recipients, key="em_to", placeholder="a@example.com, b@example.com"
-    )
-    intro = st.text_area("도입 문구", draft.intro, key="em_intro", height=80)
-    items: list[EmailItem] = []
-    for it in draft.items:
-        label = CATEGORY_LABELS.get(it.category, it.category)
-        with st.expander(f"[{label}] {it.title}", expanded=False):
-            include = st.checkbox("메일에 포함", it.include, key=f"em_inc{it.article_id}")
-            title = st.text_input("제목", it.title, key=f"em_t{it.article_id}")
-            summary = st.text_area("요약", it.summary, key=f"em_s{it.article_id}", height=120)
-            links_df = st.data_editor(
-                pd.DataFrame(
-                    [vars(k) for k in it.links] or [{"title": "", "outlet": "", "url": ""}]
-                ),
-                num_rows="dynamic",
-                hide_index=True,
-                width="stretch",
-                key=f"em_l{it.article_id}",
-                column_config={
-                    "title": st.column_config.TextColumn("링크 제목"),
-                    "outlet": st.column_config.TextColumn("매체"),
-                    "url": st.column_config.TextColumn("주소"),
-                },
-            )
-            links = [
-                Link(str(r["title"]), str(r["outlet"] or ""), str(r["url"]))
-                for _, r in links_df.iterrows()
-                if str(r["url"]).strip() and str(r["url"]) != "None"
-            ]
-            items.append(EmailItem(it.article_id, it.category, title, summary, links, include))
-    outro = st.text_area("맺음 문구", draft.outro, key="em_outro", height=80)
+    # 편집·미리보기 두 패널을 같은 높이로 맞춘다 (편집 내용이 길면 패널 안에서 스크롤)
+    with st.container(height=PANEL_HEIGHT, border=True):
+        subject = st.text_input("제목", draft.subject, key="em_subject")
+        sender = st.text_input(
+            "보내는 사람", draft.sender, key="em_from", placeholder="홍길동 <me@example.com>"
+        )
+        recipients = st.text_input(
+            "받는 사람", draft.recipients, key="em_to", placeholder="a@example.com, b@example.com"
+        )
+        intro = st.text_area("도입 문구", draft.intro, key="em_intro", height=80)
+        items: list[EmailItem] = []
+        for it in draft.items:
+            label = CATEGORY_LABELS.get(it.category, it.category)
+            with st.expander(f"[{label}] {it.title}", expanded=False):
+                include = st.checkbox("메일에 포함", it.include, key=f"em_inc{it.article_id}")
+                title = st.text_input("제목", it.title, key=f"em_t{it.article_id}")
+                summary = st.text_area("요약", it.summary, key=f"em_s{it.article_id}", height=120)
+                links_df = st.data_editor(
+                    pd.DataFrame(
+                        [vars(k) for k in it.links] or [{"title": "", "outlet": "", "url": ""}]
+                    ),
+                    num_rows="dynamic",
+                    hide_index=True,
+                    width="stretch",
+                    key=f"em_l{it.article_id}",
+                    column_config={
+                        "title": st.column_config.TextColumn("링크 제목"),
+                        "outlet": st.column_config.TextColumn("매체"),
+                        "url": st.column_config.TextColumn("주소"),
+                    },
+                )
+                links = [
+                    Link(str(r["title"]), str(r["outlet"] or ""), str(r["url"]))
+                    for _, r in links_df.iterrows()
+                    if str(r["url"]).strip() and str(r["url"]) != "None"
+                ]
+                items.append(EmailItem(it.article_id, it.category, title, summary, links, include))
+        outro = st.text_area("맺음 문구", draft.outro, key="em_outro", height=80)
 
 current = Draft(subject, recipients, intro, outro, sender, items)
 
 with preview_col:
     st.subheader("미리보기")
-    st.iframe(render_html(current), height=720)
+    with st.container(height=PANEL_HEIGHT, border=True):
+        st.iframe(render_html(current), height="stretch")
 
 st.divider()
 actions = st.columns(5)

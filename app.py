@@ -16,9 +16,9 @@ pages = [
     st.Page("views/settings.py", title="환경 설정", icon="⚙️"),
     st.Page("views/guide.py", title="사용법", icon="📖"),
 ]
-nav = st.navigation(pages)
+# 사이드바를 직접 구성하기 위해 기본 메뉴는 숨기고 st.page_link 로 메뉴를 그린다
+nav = st.navigation(pages, position="hidden")
 
-# 모든 화면 상단 제목 (각 페이지 본문보다 먼저 그려진다)
 # 사이트 제목(2.2rem)이 각 화면의 제목·소제목보다 항상 크도록 화면 제목 크기를 줄인다
 st.markdown(
     """
@@ -27,6 +27,11 @@ st.markdown(
 [data-testid="stMainBlockContainer"] h1{font-size:1.6rem;padding:.5rem 0}
 [data-testid="stMainBlockContainer"] h2{font-size:1.35rem;padding:.5rem 0}
 [data-testid="stMainBlockContainer"] h3{font-size:1.15rem;padding:.4rem 0}
+.side-brand{font-size:1.45rem;font-weight:800;line-height:1.25;margin:.2rem 0 0}
+.side-tag{font-size:.8rem;opacity:.65;margin:.15rem 0 0}
+.side-label{font-size:.72rem;font-weight:700;letter-spacing:.08em;opacity:.55;margin:.4rem 0 .1rem}
+.side-info{font-size:.85rem;line-height:1.8}
+[data-testid="stSidebar"] hr{margin:.9rem 0}
 </style>
 """,
     unsafe_allow_html=True,
@@ -34,10 +39,20 @@ st.markdown(
 st.markdown(f'<div class="site-title">📰 {SITE_TITLE}</div>', unsafe_allow_html=True)
 st.divider()
 
-st.sidebar.divider()
-st.sidebar.markdown(
-    f"소스 보기 : [GitHub]({GITHUB_URL})  \n개발자 블로그 : [{BLOG_URL}]({BLOG_URL})"
-)
-st.sidebar.caption(f"최종 개발 버전·일자 : {buildinfo.label()}")
+with st.sidebar:
+    st.markdown(
+        f'<div class="side-brand">📰 {SITE_TITLE}</div>'
+        '<div class="side-tag">주요 뉴스를 모아 후보를 고르고 메일로 만듭니다</div>',
+        unsafe_allow_html=True,
+    )
+    st.divider()
+    st.markdown('<div class="side-label">메뉴</div>', unsafe_allow_html=True)
+    for page in pages:
+        st.page_link(page)
+    st.divider()
+    st.markdown('<div class="side-label">정보</div>', unsafe_allow_html=True)
+    st.markdown(f"소스 보기 : [GitHub]({GITHUB_URL})  \n개발자 블로그 : [{BLOG_URL}]({BLOG_URL})")
+    st.divider()
+    st.caption(f"최종 개발 버전·일자 : {buildinfo.label()}")
 
 nav.run()
