@@ -64,6 +64,7 @@ class ReviewSettings:
 @dataclass
 class EmailSettings:
     subject_template: str = "뉴스 클리핑 {date}"
+    sender: str = ""  # 보내는 사람 (예: 홍길동 <me@example.com>)
     recipients: str = ""  # 쉼표로 구분
     intro: str = "안녕하세요. 이번에 선별한 주요 뉴스를 공유드립니다."
     outro: str = "감사합니다."

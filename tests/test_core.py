@@ -163,6 +163,8 @@ def test_email_draft_roundtrip_and_render():
     assert "고친 요약" not in render_html(d2)
     eml = build_eml(d2, NOW)
     assert b"X-Unsent: 1" in eml
+    d2.sender = "홍길동 <me@example.com>"
+    assert b"me@example.com" in build_eml(d2, NOW)
     assert mailto_url(d2).startswith("mailto:?subject=")
 
 

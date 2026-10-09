@@ -46,6 +46,7 @@ class Draft:
     recipients: str
     intro: str
     outro: str
+    sender: str = ""
     items: list[EmailItem] = field(default_factory=list)
 
 
@@ -71,12 +72,20 @@ def build_draft(
         key=lambda i: CATEGORY_ORDER.index(i.category) if i.category in CATEGORY_ORDER else 99
     )  # 안정 정렬: 같은 분류 안에서는 점수 순 유지
     if existing:
-        return Draft(existing.subject, existing.recipients, existing.intro, existing.outro, items)
+        return Draft(
+            existing.subject,
+            existing.recipients,
+            existing.intro,
+            existing.outro,
+            existing.sender,
+            items,
+        )
     return Draft(
         subject=cfg.subject_template.format(date=f"{today:%Y-%m-%d}"),
         recipients=cfg.recipients,
         intro=cfg.intro,
         outro=cfg.outro,
+        sender=cfg.sender,
         items=items,
     )
 
@@ -90,7 +99,14 @@ def draft_from_dict(data: dict) -> Draft:
         EmailItem(**{**i, "links": [Link(**link) for link in i.get("links", [])]})
         for i in data.get("items", [])
     ]
-    return Draft(data["subject"], data["recipients"], data["intro"], data["outro"], items)
+    return Draft(
+        data["subject"],
+        data["recipients"],
+        data["intro"],
+        data["outro"],
+        data.get("sender", ""),
+        items,
+    )
 
 
 def _included(d: Draft) -> list[EmailItem]:
@@ -188,6 +204,8 @@ def build_eml(d: Draft, now: datetime) -> bytes:
     """메일 앱에서 새 편지로 열리는 .eml (X-Unsent)."""
     msg = EmailMessage()
     msg["Subject"] = d.subject
+    if d.sender.strip():
+        msg["From"] = d.sender.strip()
     if d.recipients.strip():
         msg["To"] = d.recipients.strip()
     msg["Date"] = format_datetime(now)

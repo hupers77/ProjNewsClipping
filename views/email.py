@@ -68,6 +68,9 @@ edit_col, preview_col = st.columns([1, 1], gap="large")
 with edit_col:
     st.subheader("편집")
     subject = st.text_input("제목", draft.subject, key="em_subject")
+    sender = st.text_input(
+        "보내는 사람", draft.sender, key="em_from", placeholder="홍길동 <me@example.com>"
+    )
     recipients = st.text_input(
         "받는 사람", draft.recipients, key="em_to", placeholder="a@example.com, b@example.com"
     )
@@ -101,7 +104,7 @@ with edit_col:
             items.append(EmailItem(it.article_id, it.category, title, summary, links, include))
     outro = st.text_area("맺음 문구", draft.outro, key="em_outro", height=80)
 
-current = Draft(subject, recipients, intro, outro, items)
+current = Draft(subject, recipients, intro, outro, sender, items)
 
 with preview_col:
     st.subheader("미리보기")

@@ -113,6 +113,7 @@ with tab_review:
 with tab_email:
     e = settings.email
     e.subject_template = st.text_input("제목 템플릿", e.subject_template, help="{date} = 오늘 날짜")
+    e.sender = st.text_input("보내는 사람", e.sender, help="예: 홍길동 <me@example.com>")
     e.recipients = st.text_input("받는 사람 (쉼표로 구분, 비워도 됨)", e.recipients)
     e.intro = st.text_area("도입 문구", e.intro, height=80)
     e.outro = st.text_area("맺음 문구", e.outro, height=80)
