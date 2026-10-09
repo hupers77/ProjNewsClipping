@@ -16,7 +16,19 @@ pages = [
 nav = st.navigation(pages)
 
 # 모든 화면 상단 제목 (각 페이지 본문보다 먼저 그려진다)
-st.markdown(f"#### 📰 {SITE_TITLE}")
+# 사이트 제목(2.2rem)이 각 화면의 제목·소제목보다 항상 크도록 화면 제목 크기를 줄인다
+st.markdown(
+    """
+<style>
+.site-title{font-size:2.2rem;font-weight:700;line-height:1.3;margin:0 0 .25rem}
+[data-testid="stMainBlockContainer"] h1{font-size:1.6rem;padding:.5rem 0}
+[data-testid="stMainBlockContainer"] h2{font-size:1.35rem;padding:.5rem 0}
+[data-testid="stMainBlockContainer"] h3{font-size:1.15rem;padding:.4rem 0}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+st.markdown(f'<div class="site-title">📰 {SITE_TITLE}</div>', unsafe_allow_html=True)
 st.divider()
 
 st.sidebar.divider()
