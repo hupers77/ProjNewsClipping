@@ -62,7 +62,17 @@ head[1].button(
     help="편집한 내용을 버리고 승인 목록으로 처음부터 다시 만듭니다",
 )
 
-edit_col, preview_col = st.columns([1, 1], gap="large")
+# 미리보기가 가로 스크롤 없이 보이도록 편집 영역은 좁게(1:2), 사이드바·여백도 줄인다
+st.markdown(
+    """
+<style>
+[data-testid="stSidebar"]{width:200px !important;min-width:200px !important}
+[data-testid="stMainBlockContainer"]{padding-left:1.5rem;padding-right:1.5rem;max-width:none}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+edit_col, preview_col = st.columns([1, 2], gap="medium")
 
 with edit_col:
     st.subheader("편집")
