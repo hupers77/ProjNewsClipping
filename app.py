@@ -19,11 +19,11 @@ pages = [
 # 사이드바를 직접 구성하기 위해 기본 메뉴는 숨기고 st.page_link 로 메뉴를 그린다
 nav = st.navigation(pages, position="hidden")
 
-# 사이트 제목(2.2rem)이 각 화면의 제목·소제목보다 항상 크도록 화면 제목 크기를 줄인다
+# 사이트 제목은 사이드바에만 둔다. 본문 상단은 여백·제목 크기를 줄여 공간을 확보한다
 st.markdown(
     """
 <style>
-.site-title{font-size:2.2rem;font-weight:700;line-height:1.3;margin:0 0 .25rem}
+[data-testid="stMainBlockContainer"]{padding-top:2.5rem}
 [data-testid="stMainBlockContainer"] h1{font-size:1.6rem;padding:.5rem 0}
 [data-testid="stMainBlockContainer"] h2{font-size:1.35rem;padding:.5rem 0}
 [data-testid="stMainBlockContainer"] h3{font-size:1.15rem;padding:.4rem 0}
@@ -36,9 +36,6 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-st.markdown(f'<div class="site-title">📰 {SITE_TITLE}</div>', unsafe_allow_html=True)
-st.divider()
-
 with st.sidebar:
     st.markdown(
         f'<div class="side-brand">📰 {SITE_TITLE}</div>'
