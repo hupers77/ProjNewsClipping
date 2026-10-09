@@ -52,3 +52,13 @@ def test_approve_then_email_page():
     em = AppTest.from_file(str(ROOT / "views/email.py"), default_timeout=30).run()
     assert not em.exception
     assert any("뉴스 클리핑" in t.value for t in em.text_input)
+
+
+def test_app_sidebar_links_and_version():
+    at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=30).run()
+    assert not at.exception
+    text = " ".join(m.value for m in at.sidebar.markdown)
+    assert (
+        "소스 보기 : [GitHub]" in text and "개발자 블로그 : [https://blog.naver.com/hupers]" in text
+    )
+    assert any("최종 개발 버전·일자 : v" in c.value for c in at.sidebar.caption)

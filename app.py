@@ -2,8 +2,11 @@
 
 import streamlit as st
 
+from newsclip import buildinfo
+
 SITE_TITLE = "뉴스 클리핑 사이트"
 GITHUB_URL = "https://github.com/hupers77/ProjNewsClipping"
+BLOG_URL = "https://blog.naver.com/hupers"
 
 st.set_page_config(page_title=SITE_TITLE, page_icon="📰", layout="wide")
 
@@ -32,6 +35,9 @@ st.markdown(f'<div class="site-title">📰 {SITE_TITLE}</div>', unsafe_allow_htm
 st.divider()
 
 st.sidebar.divider()
-st.sidebar.markdown(f"🔗 [GitHub]({GITHUB_URL})")
+st.sidebar.markdown(
+    f"소스 보기 : [GitHub]({GITHUB_URL})  \n개발자 블로그 : [{BLOG_URL}]({BLOG_URL})"
+)
+st.sidebar.caption(f"최종 개발 버전·일자 : {buildinfo.label()}")
 
 nav.run()
