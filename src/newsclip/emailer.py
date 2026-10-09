@@ -77,7 +77,7 @@ def build_draft(
             existing.recipients,
             existing.intro,
             existing.outro,
-            existing.sender,
+            existing.sender or cfg.sender,
             items,
         )
     return Draft(
