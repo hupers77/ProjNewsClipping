@@ -35,7 +35,7 @@ def _seed() -> None:
     )
 
 
-@pytest.mark.parametrize("page", ["views/candidates.py", "views/settings.py"])
+@pytest.mark.parametrize("page", ["views/candidates.py", "views/settings.py", "views/guide.py"])
 def test_pages_render(page):
     _seed()
     at = AppTest.from_file(str(ROOT / page), default_timeout=30).run()
