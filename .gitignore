@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# 빌드 산출물
+build/
+dist/
+src/newsclip/build_info.json
+packaging/Korean.isl
+!packaging/*.spec

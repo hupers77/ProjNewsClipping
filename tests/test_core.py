@@ -204,3 +204,14 @@ def test_email_width_is_fluid_between_min_and_double():
     assert MAX_WIDTH == MIN_WIDTH * 2 == 1280
     assert "min-width:640px;max-width:1280px;width:100%" in html
     assert 'width="640"' not in html
+
+
+def test_buildinfo_prefers_bundled_build_info(tmp_path, monkeypatch):
+    import json
+
+    from newsclip import buildinfo
+
+    fake = tmp_path / "build_info.json"
+    fake.write_text(json.dumps({"date": "2026-10-10", "commit": "abc1234"}), encoding="utf-8")
+    monkeypatch.setattr(buildinfo, "__file__", str(tmp_path / "buildinfo.py"))
+    assert buildinfo.last_commit() == ("2026-10-10", "abc1234")

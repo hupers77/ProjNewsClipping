@@ -46,3 +46,18 @@ git config core.hooksPath .githooks           # (1회) guide.py 를 커밋하면
 ```
 
 원본과 다르면 `pytest`(`tests/test_guide_html.py`)가 실패합니다. guide.html 의 설정 수치는 기본값 기준입니다.
+
+## Windows 설치 파일 빌드
+
+Windows 용은 Windows 에서만 빌드할 수 있어 GitHub Actions(`.github/workflows/build.yml`)가 만듭니다. `v*` 태그를 푸시하거나 Actions 탭에서 **build → Run workflow** 를 누르면 `NewsClipping-Setup-<버전>.exe` 가 산출물/릴리스로 올라옵니다.
+
+사용자는 설치 파일을 실행하고 '다음'만 누르면 됩니다. 관리자 권한 없이 설치되며 바탕화면과 시작 메뉴에 아이콘이 생깁니다. 실행하면 앱 전용 창(Edge/Chrome `--app`)이 열리고, 창을 닫으면 서버도 종료됩니다. 설정·기사 데이터는 `%LOCALAPPDATA%\ProjNewsClipping` 에 저장되어 재설치·삭제 후에도 남습니다.
+
+로컬(다른 OS)에서 번들 구성만 점검하려면:
+
+```bash
+uv sync --group build
+uv run python packaging/write_build_info.py
+uv run pyinstaller packaging/newsclipping.spec --noconfirm
+./dist/NewsClipping/NewsClipping --smoke   # 모든 화면 스크립트 실행 점검
+```

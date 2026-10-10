@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 from importlib import metadata
 from pathlib import Path
@@ -16,8 +17,22 @@ def version() -> str:
         return "dev"
 
 
+def _bundled_commit() -> tuple[str, str] | None:
+    """빌드 때 기록한 build_info.json (설치본에는 git 이 없다)."""
+    path = Path(__file__).with_name("build_info.json")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    day, short = data.get("date", ""), data.get("commit", "")
+    return (day, short) if day and short else None
+
+
 def last_commit() -> tuple[str, str] | None:
     """(YYYY-MM-DD, 짧은 해시) 또는 None."""
+    bundled = _bundled_commit()
+    if bundled:
+        return bundled
     try:
         out = subprocess.run(
             ["git", "log", "-1", "--format=%cs %h"],
