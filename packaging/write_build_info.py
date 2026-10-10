@@ -18,3 +18,5 @@ except Exception:  # noqa: BLE001
     day, short = "", ""
 out.write_text(json.dumps({"date": day, "commit": short}), encoding="utf-8")
 print(f"wrote {out.relative_to(ROOT)}: {day} {short}")
+if not day:
+    print("WARNING: git info unavailable - the app will show the version without a date")

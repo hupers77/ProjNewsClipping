@@ -214,4 +214,40 @@ def test_buildinfo_prefers_bundled_build_info(tmp_path, monkeypatch):
     fake = tmp_path / "build_info.json"
     fake.write_text(json.dumps({"date": "2026-10-10", "commit": "abc1234"}), encoding="utf-8")
     monkeypatch.setattr(buildinfo, "__file__", str(tmp_path / "buildinfo.py"))
+    buildinfo.last_commit.cache_clear()
     assert buildinfo.last_commit() == ("2026-10-10", "abc1234")
+    buildinfo.last_commit.cache_clear()
+
+
+def test_buildinfo_never_runs_git_when_frozen(tmp_path, monkeypatch):
+    import subprocess
+    import sys
+
+    from newsclip import buildinfo
+
+    def boom(*a, **k):
+        raise AssertionError("git must not run in the installed app")
+
+    monkeypatch.setattr(
+        buildinfo, "__file__", str(tmp_path / "buildinfo.py")
+    )  # build_info.json 없음
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(subprocess, "run", boom)
+    buildinfo.last_commit.cache_clear()
+    assert buildinfo.last_commit() is None
+    buildinfo.last_commit.cache_clear()
+
+
+def test_buildinfo_result_is_cached(monkeypatch):
+    import subprocess
+
+    from newsclip import buildinfo
+
+    calls = []
+    real = subprocess.run
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: calls.append(1) or real(*a, **k))
+    buildinfo.last_commit.cache_clear()
+    buildinfo.last_commit()
+    buildinfo.last_commit()
+    assert len(calls) <= 1
+    buildinfo.last_commit.cache_clear()
