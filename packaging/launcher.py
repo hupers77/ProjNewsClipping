@@ -161,8 +161,15 @@ def run_streamlit(port: int) -> None:
     bootstrap.run(str(root / "app.py"), False, [], flags)
 
 
+SMOKE_LOG = Path(__import__("tempfile").gettempdir()) / "newsclip-smoke.log"
+
+
 def smoke() -> int:
-    """번들 안에서 모든 화면 스크립트를 실행해 import/문법 오류가 없는지 확인한다."""
+    """번들 안에서 모든 화면 스크립트를 실행해 import/문법 오류가 없는지 확인한다.
+
+    콘솔 없는 exe 에서도 결과를 볼 수 있도록 같은 내용을 SMOKE_LOG 파일에도 남긴다.
+    종료 코드: 0 = 모두 정상.
+    """
     import tempfile
 
     from streamlit.testing.v1 import AppTest
@@ -170,6 +177,7 @@ def smoke() -> int:
     os.environ["NEWSCLIP_HOME"] = tempfile.mkdtemp(prefix="newsclip-smoke-")
     root = resource_dir()
     os.chdir(root)
+    lines: list[str] = []
     failed = False
     for script in (
         "app.py",
@@ -178,10 +186,17 @@ def smoke() -> int:
         "views/settings.py",
         "views/guide.py",
     ):
-        at = AppTest.from_file(str(root / script), default_timeout=60).run()
-        errors = [str(e.value) for e in at.exception]
-        print(f"{'FAIL' if errors else 'ok  '} {script}", *errors, flush=True)
+        try:
+            at = AppTest.from_file(str(root / script), default_timeout=60).run()
+            errors = [str(e.value) for e in at.exception]
+        except Exception as exc:  # noqa: BLE001 - 어떤 실패든 점검 결과로 남긴다
+            errors = [f"{type(exc).__name__}: {exc}"]
+        lines.append(f"{'FAIL' if errors else 'ok  '} {script} {' | '.join(errors)}".rstrip())
         failed = failed or bool(errors)
+    report = "\n".join(lines) + "\n"
+    SMOKE_LOG.write_text(report, encoding="utf-8")
+    if sys.stdout is not None:
+        print(report, end="", flush=True)
     return 1 if failed else 0
 
 

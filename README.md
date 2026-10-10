@@ -49,11 +49,34 @@ git config core.hooksPath .githooks           # (1회) guide.py 를 커밋하면
 
 ## Windows 설치 파일 빌드
 
-Windows 용은 Windows 에서만 빌드할 수 있어 GitHub Actions(`.github/workflows/build.yml`)가 만듭니다. `v*` 태그를 푸시하거나 Actions 탭에서 **build → Run workflow** 를 누르면 `NewsClipping-Setup-<버전>.exe` 가 산출물/릴리스로 올라옵니다.
+Windows 용은 Windows 에서만 빌드할 수 있습니다. 방법은 두 가지입니다.
 
-사용자는 설치 파일을 실행하고 '다음'만 누르면 됩니다. 관리자 권한 없이 설치되며 바탕화면과 시작 메뉴에 아이콘이 생깁니다. 실행하면 앱 전용 창(Edge/Chrome `--app`)이 열리고, 창을 닫으면 서버도 종료됩니다. 설정·기사 데이터는 `%LOCALAPPDATA%\ProjNewsClipping` 에 저장되어 재설치·삭제 후에도 남습니다.
+### A. 다른 Windows PC 에서 직접 빌드 (GitHub Actions 없이)
 
-로컬(다른 OS)에서 번들 구성만 점검하려면:
+필요한 것: Windows 10/11 PC, 인터넷, (Git 또는 ZIP 다운로드). Python 은 미리 설치하지 않아도 됩니다.
+
+1. 소스를 받습니다.
+   - Git 이 있으면: `git clone https://github.com/hupers77/ProjNewsClipping.git`
+   - 없으면: https://github.com/hupers77/ProjNewsClipping/archive/refs/heads/main.zip 을 받아 압축 해제
+2. 폴더의 `packaging\build_windows.bat` 을 **더블클릭**합니다.
+   - uv(Python 관리자)와 Inno Setup 이 없으면 winget 으로 자동 설치합니다. (설치 중 승인 창이 뜨면 허용)
+   - 이어서 앱 빌드 → 화면 점검 → 설치 파일 생성까지 자동 진행합니다. 처음에는 10~20분 걸릴 수 있습니다.
+3. 끝나면 `dist\NewsClipping-Setup-<버전>.exe` 가 만들어지고 탐색기가 열립니다.
+4. 그 파일을 사용자 PC 로 옮겨 실행하면 설치됩니다 (바탕화면 아이콘 자동 생성).
+
+문제가 생기면: 창에 나온 마지막 오류 줄을 확인하세요. 앱 실행 오류는 `%LOCALAPPDATA%\ProjNewsClipping\app.log`, 화면 점검 결과는 `%TEMP%\newsclip-smoke.log` 에 남습니다. winget 이 없는 PC 는 [uv](https://docs.astral.sh/uv/)와 [Inno Setup 6](https://jrsoftware.org/isdl.php)을 직접 설치한 뒤 다시 실행합니다.
+
+### B. GitHub Actions
+
+`.github/workflows/build.yml` — `v*` 태그 푸시 또는 Actions 탭의 **build → Run workflow** 로 같은 설치 파일을 만들어 아티팩트/릴리스로 올립니다.
+
+### 설치하는 사용자 입장
+
+설치 파일을 실행하고 '다음'만 누르면 됩니다. 관리자 권한 없이 설치되며 바탕화면과 시작 메뉴에 아이콘이 생깁니다. 실행하면 앱 전용 창(Edge/Chrome `--app`)이 열리고 창을 닫으면 서버도 종료됩니다. 설정·기사 데이터는 `%LOCALAPPDATA%\ProjNewsClipping` 에 저장되어 재설치·삭제 후에도 남습니다.
+
+> 코드 서명이 없는 설치 파일이라 처음 실행할 때 Windows SmartScreen 이 "알 수 없는 게시자" 경고를 띄울 수 있습니다. **추가 정보 → 실행** 으로 진행합니다. 백신이 PyInstaller 결과물을 오탐하면 예외로 등록하세요.
+
+### 다른 OS 에서 번들 구성만 점검
 
 ```bash
 uv sync --group build
