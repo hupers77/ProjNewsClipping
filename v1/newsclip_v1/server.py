@@ -349,6 +349,9 @@ def make_server(port: int, *, state: AppState | None = None) -> ThreadingHTTPSer
         pass
 
     Bound.state = state
+    # 기본 접속 대기열(5)은 수집 중 화면의 동시 요청(신호·진행 조회·페이지)이 몰리면 넘쳐
+    # 브라우저에서 'Failed to fetch' 로 보인다 → 넉넉히 늘린다.
+    ThreadingHTTPServer.request_queue_size = 128
     server = ThreadingHTTPServer(("127.0.0.1", port), Bound)
     server.daemon_threads = True
     server.app_state = state  # type: ignore[attr-defined]

@@ -208,3 +208,22 @@ def test_collect_job_runs_and_reports(server, monkeypatch):
             break
         time.sleep(0.05)
     assert status["running"] is False and status["report"]["new_total"] == 1
+
+
+def test_server_survives_many_concurrent_requests(server):
+    """수집 중 화면이 보내는 동시 요청이 몰려도 접속이 거부되지 않아야 한다 (대기열 크기)."""
+    import urllib.request
+
+    errors: list[str] = []
+
+    def hammer() -> None:
+        for _ in range(30):
+            try:
+                urllib.request.urlopen(server + "/api/collect/status", timeout=10).read()
+            except Exception as exc:  # noqa: BLE001
+                errors.append(repr(exc))
+
+    threads = [threading.Thread(target=hammer) for _ in range(24)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert errors == []

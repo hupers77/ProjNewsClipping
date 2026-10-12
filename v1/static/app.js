@@ -4,17 +4,25 @@
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
-async function api(path, body) {
+async function api(path, body, opts = {}) {
+  // retry: 같은 요청을 다시 보내도 안전한 것(수집 시작·미리보기)만 한 번 더 시도한다
+  const attempts = opts.retry ? 3 : 1;
   let res;
-  try {
-    res = await fetch(path, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-NewsClip": "1" },
-      body: JSON.stringify(body || {}),
-    });
-  } catch (_) {
-    showDisconnected();
-    throw new Error("앱 서버와 연결할 수 없습니다. 앱을 다시 실행해 주세요.");
+  for (let i = 0; i < attempts; i++) {
+    try {
+      res = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-NewsClip": "1" },
+        body: JSON.stringify(body || {}),
+      });
+      break;
+    } catch (_) {
+      if (i === attempts - 1) {
+        showDisconnected();
+        throw new Error("앱 서버와 연결할 수 없습니다. 앱을 다시 실행해 주세요.");
+      }
+      await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+    }
   }
   let data = {};
   try { data = await res.json(); } catch (_) { /* 본문 없음 */ }
@@ -52,7 +60,7 @@ async function ping() {
     const bar = $("#disconnected");
     if (bar) bar.remove();
   } catch (_) {
-    if (++pingFails >= 2) showDisconnected();
+    if (++pingFails >= 3) showDisconnected();
   }
 }
 setInterval(ping, 5000);
@@ -170,7 +178,7 @@ function initCandidates() {
     collectBtn.disabled = true;
     prog.classList.add("on");
     prog.textContent = "⏳ 수집을 시작합니다…";
-    try { await api("/api/collect"); pollCollect(); } catch (e) { fail(e); collectBtn.disabled = false; prog.classList.remove("on"); }
+    try { await api("/api/collect", {}, { retry: true }); pollCollect(); } catch (e) { fail(e); collectBtn.disabled = false; prog.classList.remove("on"); }
   });
   if ($("#collect-running")) { collectBtn.disabled = true; prog.classList.add("on"); pollCollect(); }
 
@@ -232,7 +240,7 @@ function initEmail() {
 
   async function refreshPreview() {
     try {
-      const res = await api("/api/email/preview", { draft: readDraft() });
+      const res = await api("/api/email/preview", { draft: readDraft() }, { retry: true });
       $("#preview").srcdoc = res.html;
     } catch (e) { fail(e); }
   }
