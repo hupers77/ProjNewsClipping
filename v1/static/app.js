@@ -5,7 +5,7 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
 async function api(path, body, opts = {}) {
-  // retry: 같은 요청을 다시 보내도 안전한 것(수집 시작·미리보기)만 한 번 더 시도한다
+  // retry: 같은 요청을 다시 보내도 안전한 것(수집 시작·미리보기)만 최대 3회 시도한다
   const attempts = opts.retry ? 3 : 1;
   let res;
   for (let i = 0; i < attempts; i++) {
