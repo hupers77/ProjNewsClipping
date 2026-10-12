@@ -1124,7 +1124,7 @@ wheels = [
 
 [[package]]
 name = "projnewsclipping"
-version = "0.9"
+version = "1.0"
 source = { editable = "." }
 dependencies = [
     { name = "feedparser" },
@@ -1132,7 +1132,6 @@ dependencies = [
     { name = "platformdirs" },
     { name = "pyyaml" },
     { name = "selectolax" },
-    { name = "streamlit" },
     { name = "trafilatura" },
 ]
 
@@ -1143,6 +1142,10 @@ build = [
 dev = [
     { name = "pytest" },
     { name = "ruff" },
+    { name = "streamlit" },
+]
+legacy = [
+    { name = "streamlit" },
 ]
 
 [package.metadata]
@@ -1152,7 +1155,6 @@ requires-dist = [
     { name = "platformdirs", specifier = ">=4.2" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "selectolax", specifier = ">=0.3" },
-    { name = "streamlit", specifier = ">=1.40" },
     { name = "trafilatura", specifier = ">=1.12" },
 ]
 
@@ -1161,7 +1163,9 @@ build = [{ name = "pyinstaller", specifier = ">=6.10" }]
 dev = [
     { name = "pytest", specifier = ">=8" },
     { name = "ruff", specifier = ">=0.6" },
+    { name = "streamlit", specifier = ">=1.40" },
 ]
+legacy = [{ name = "streamlit", specifier = ">=1.40" }]
 
 [[package]]
 name = "protobuf"

@@ -225,3 +225,5 @@ dist/
 src/newsclip/build_info.json
 packaging/Korean.isl
 !packaging/*.spec
+v1/packaging/Korean.isl
+!v1/packaging/*.spec

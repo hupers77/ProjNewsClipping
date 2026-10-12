@@ -46,21 +46,36 @@ class _Recorder:
         return lambda text: self.blocks.append((name, str(text)))
 
 
-def collect_blocks(guide_py: Path = GUIDE_PY) -> list[Block]:
-    """guide.py 를 (기본 설정으로) 실행해 출력 블록 목록을 얻는다."""
+def collect_blocks(
+    guide_py: Path = GUIDE_PY,
+    *,
+    use_defaults: bool = True,
+    extra_paths: tuple[Path, ...] = (),
+) -> list[Block]:
+    """guide.py 를 실행해 출력 블록 목록을 얻는다.
+
+    use_defaults=True 면 사용자 설정 대신 기본값으로 만든다 (정적 HTML 문서용).
+    False 면 현재 설정(NEWSCLIP_HOME)을 그대로 쓴다 (앱 화면용).
+    extra_paths 는 guide.py 가 import 하는 패키지 위치.
+    """
     recorder = _Recorder()
     fake_st = types.ModuleType("streamlit")
     fake_st.__dict__["__getattr__"] = recorder.__getattr__
     saved_st = sys.modules.get("streamlit")
     saved_home = os.environ.get("NEWSCLIP_HOME")
     sys.modules["streamlit"] = fake_st
-    sys.path.insert(0, str(ROOT / "src"))
+    added = [str(ROOT / "src"), *map(str, extra_paths)]
+    sys.path[:0] = added
     try:
-        with tempfile.TemporaryDirectory() as tmp:
-            os.environ["NEWSCLIP_HOME"] = tmp  # 사용자 설정이 아니라 기본값으로 만든다
+        if use_defaults:
+            with tempfile.TemporaryDirectory() as tmp:
+                os.environ["NEWSCLIP_HOME"] = tmp  # 사용자 설정이 아니라 기본값으로 만든다
+                runpy.run_path(str(guide_py), run_name="__guide__")
+        else:
             runpy.run_path(str(guide_py), run_name="__guide__")
     finally:
-        sys.path.pop(0)
+        for entry in added:
+            sys.path.remove(entry)
         if saved_st is None:
             sys.modules.pop("streamlit", None)
         else:

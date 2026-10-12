@@ -206,14 +206,16 @@ def test_email_width_is_fluid_between_min_and_double():
     assert 'width="640"' not in html
 
 
-def test_buildinfo_prefers_bundled_build_info(tmp_path, monkeypatch):
+def test_buildinfo_uses_bundled_build_info_when_frozen(tmp_path, monkeypatch):
     import json
+    import sys
 
     from newsclip import buildinfo
 
     fake = tmp_path / "build_info.json"
     fake.write_text(json.dumps({"date": "2026-10-10", "commit": "abc1234"}), encoding="utf-8")
     monkeypatch.setattr(buildinfo, "__file__", str(tmp_path / "buildinfo.py"))
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
     buildinfo.last_commit.cache_clear()
     assert buildinfo.last_commit() == ("2026-10-10", "abc1234")
     buildinfo.last_commit.cache_clear()

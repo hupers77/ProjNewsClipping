@@ -1,6 +1,6 @@
 name: build
 
-# Windows 설치 파일 빌드 (PyInstaller + Inno Setup). 크로스 빌드가 안 되므로 Windows 러너에서 한다.
+# v1 Windows 설치 파일 빌드 (PyInstaller + Inno Setup). 크로스 빌드가 안 되므로 Windows 러너에서 한다.
 # 릴리스(v* 태그 푸시)와 수동 실행에서만 동작한다 — PR·일반 push 에서는 빌드하지 않는다.
 on:
   workflow_dispatch:
@@ -17,11 +17,13 @@ jobs:
       - run: uv sync --group build --group dev
       - name: 테스트
         run: uv run pytest -q
+      - name: 번들용 환경 (개발·레거시 의존성 제외)
+        run: uv sync --no-dev --group build
       - name: 빌드 정보 기록
         run: uv run python packaging/write_build_info.py
       - name: PyInstaller 빌드
-        run: uv run pyinstaller packaging/newsclipping.spec --noconfirm
-      - name: 산출물 점검 (모든 화면 스크립트 실행)
+        run: uv run pyinstaller v1/packaging/newsclipping.spec --noconfirm
+      - name: 산출물 점검 (번들 안에서 서버를 띄워 모든 화면 요청)
         run: dist/NewsClipping/NewsClipping.exe --smoke
         shell: bash
       - name: Inno Setup 준비
@@ -32,7 +34,7 @@ jobs:
           }
           # 한국어 설치 화면 (비공식 번역). 받지 못하면 영어 화면으로 진행한다.
           try {
-            Invoke-WebRequest "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/Korean.isl" -OutFile packaging/Korean.isl
+            Invoke-WebRequest "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/Korean.isl" -OutFile v1/packaging/Korean.isl
           } catch { Write-Host "Korean.isl 다운로드 실패 - 영어 화면으로 진행" }
       - name: 설치 파일 생성
         shell: pwsh
@@ -40,7 +42,7 @@ jobs:
           $ver = (uv run python -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])").Trim()
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) { $iscc = (Get-Command iscc).Source }
-          & $iscc "/DAppVersion=$ver" packaging/installer.iss
+          & $iscc "/DAppVersion=$ver" v1/packaging/installer.iss
           if ($LASTEXITCODE -ne 0) { throw "iscc 실패" }
       - uses: actions/upload-artifact@v4
         with:
