@@ -132,6 +132,15 @@ def _card(c: Candidate) -> str:
 </div></div></div>"""
 
 
+def _shown_first(c: Candidate) -> bool:
+    return c.is_candidate or c.decision != PENDING
+
+
+def other_cards(result: ReviewResult) -> str:
+    """후보 점수 기준에 못 미친(그리고 아직 결정하지 않은) 기사 카드들 — 지연 로드용."""
+    return "".join(_card(c) for c in result.candidates if not _shown_first(c))
+
+
 def candidates_page(
     settings: Settings, result: ReviewResult, *, collecting: bool, last_sent: str | None
 ) -> str:
@@ -142,7 +151,9 @@ def candidates_page(
         f"{e(CATEGORY_LABELS.get(k, k))}</label>"
         for k in cats
     )
-    cards = "".join(_card(c) for c in result.candidates)
+    first = [c for c in result.candidates if _shown_first(c)]
+    later = len(result.candidates) - len(first)
+    cards = "".join(_card(c) for c in first)
     excluded = ""
     if result.excluded:
         rows = "".join(
@@ -177,11 +188,12 @@ def candidates_page(
   <label>상태 <select id="f-state" style="width:auto">
     <option value="">전체</option><option value="pending">미검토</option>
     <option value="approved">승인</option><option value="rejected">거절</option></select></label>
-  <label><input type="checkbox" id="f-cand" checked> 후보만 보기</label>
+  <label><input type="checkbox" id="f-cand" checked> 후보만 보기
+    <span class="hint">(후보 외 {later}건)</span></label>
   <input type="text" id="f-query" placeholder="제목 검색">
 </div>
 {empty}
-<div id="list">{cards}</div>
+<div id="list" data-later="{later}">{cards}</div>
 <div id="no-match" class="empty" hidden>조건에 맞는 기사가 없습니다. 필터를 바꿔 보세요.</div>
 {excluded}
 <dialog id="make-dialog">

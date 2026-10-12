@@ -113,8 +113,12 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("X-Frame-Options", "SAMEORIGIN")
         for k, v in (extra or {}).items():
             self.send_header(k, v)
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            # 브라우저가 응답을 받기 전에 닫음(새로고침·이동). 서버 오류가 아니므로 조용히 넘긴다
+            self.close_connection = True
 
     def _html(self, text: str, status: int = 200) -> None:
         self._send(status, text.encode("utf-8"), "text/html; charset=utf-8")
@@ -144,6 +148,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path == "/":
                 return self._page_candidates()
+            if path == "/fragments/others":
+                return self._fragment_others()
             if path == "/email":
                 return self._page_email()
             if path == "/settings":
@@ -190,6 +196,12 @@ class Handler(BaseHTTPRequestHandler):
                 last_sent=last_sent if isinstance(last_sent, str) else None,
             )
         )
+
+    def _fragment_others(self) -> None:
+        """'후보만 보기'를 껐을 때 처음 한 번 불러오는 후보 외 기사 카드들."""
+        settings, store = config.load(), Store2()
+        result = review(settings, store)
+        self._html(pages.other_cards(result))
 
     def _page_email(self) -> None:
         store = Store2()

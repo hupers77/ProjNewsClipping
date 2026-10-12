@@ -93,12 +93,25 @@ document.addEventListener("visibilitychange", () => {
 
 /* ───────── 후보 리스트 ───────── */
 function initCandidates() {
-  const cards = $$(".card[data-id]");
   const makeBtn = $("#make-email");
   const collectBtn = $("#collect");
   const q = $("#f-query");
 
-  function approvedCount() { return cards.filter((c) => c.dataset.state === "approved").length; }
+  const cards = () => $$(".card[data-id]");
+  let othersLoaded = Number($("#list").dataset.later) === 0;
+  let loadingOthers = false;
+
+  async function loadOthers() {
+    if (othersLoaded || loadingOthers) return;
+    loadingOthers = true;
+    try {
+      const html = await (await fetch("/fragments/others", { cache: "no-store" })).text();
+      $("#list").insertAdjacentHTML("beforeend", html);
+      othersLoaded = true;
+    } catch (e) { fail(e); } finally { loadingOthers = false; }
+  }
+
+  function approvedCount() { return cards().filter((c) => c.dataset.state === "approved").length; }
 
   function refreshCounts() {
     const n = approvedCount();
@@ -114,7 +127,7 @@ function initCandidates() {
     const onlyCand = $("#f-cand").checked;
     const text = q.value.trim().toLowerCase();
     let shown = 0;
-    for (const c of cards) {
+    for (const c of cards()) {
       let ok = cats.has(c.dataset.cat);
       if (ok && state && c.dataset.state !== (state === "pending" ? "" : state)) ok = false;
       if (ok && onlyCand && c.dataset.cand !== "1" && c.dataset.state !== "rejected") ok = false;
@@ -122,7 +135,7 @@ function initCandidates() {
       c.hidden = !ok;
       if (ok) shown++;
     }
-    $("#no-match").hidden = shown !== 0 || cards.length === 0;
+    $("#no-match").hidden = shown !== 0 || cards().length === 0;
     $("#count-shown").textContent = shown;
   }
 
@@ -161,7 +174,11 @@ function initCandidates() {
     else if (btn.classList.contains("btn-undo")) decide(card, "");
   });
 
-  $$(".f-cat, #f-state, #f-cand").forEach((el) => el.addEventListener("change", applyFilters));
+  $$(".f-cat, #f-state").forEach((el) => el.addEventListener("change", applyFilters));
+  $("#f-cand").addEventListener("change", async () => {
+    if (!$("#f-cand").checked) await loadOthers(); // 후보 외 기사는 필요할 때 한 번만 불러온다
+    applyFilters();
+  });
   q.addEventListener("input", applyFilters);
   applyFilters();
   refreshCounts();

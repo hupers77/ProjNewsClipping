@@ -253,3 +253,25 @@ def test_endpoint_names_avoid_ad_blocker_patterns():
     }
     bad = sorted(p for p in paths if risky & set(p.strip("/").split("/")))
     assert bad == [], f"광고 차단기에 걸릴 수 있는 이름: {bad}"
+
+
+def test_candidates_page_defers_non_candidates(server):
+    """후보 점수 기준에 못 미친 기사는 첫 화면에 넣지 않고 /fragments/others 로 나눠 준다."""
+    settings = config.load()
+    settings.review.min_score = 101  # 아무도 후보가 되지 못하게
+    config.save(settings)
+    first = get(server, "/")[1]
+    assert 'data-later="3"' in first and 'class="card"' not in first
+    frag = get(server, "/fragments/others")[1]
+    assert frag.count('class="card"') == 3
+
+
+def test_client_disconnect_does_not_crash_the_handler(server):
+    import socket
+
+    host, port = server.removeprefix("http://").split(":")
+    for _ in range(5):
+        s = socket.create_connection((host, int(port)))
+        s.sendall(b"GET / HTTP/1.1\r\nHost: localhost\r\n\r\n")
+        s.close()  # 응답을 받기 전에 끊는다
+    assert get(server, "/health")[0] == 200
