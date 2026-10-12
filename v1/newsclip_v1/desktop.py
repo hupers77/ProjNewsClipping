@@ -22,8 +22,11 @@ from newsclip_v1.server import AppState, make_server
 
 DEFAULT_PORT = 8520
 APP_NAME = "ProjNewsClipping"
-IDLE_SECONDS = 25  # 마지막 신호 뒤 이 시간이 지나면 종료 (화면이 5초마다 신호를 보낸다)
-FIRST_PING_SECONDS = 120  # 창이 아예 열리지 않은 경우의 안전장치
+# 앱 창 프로세스를 알 수 있으면 그 프로세스가 끝났을 때만 종료한다. 화면 신호(ping)는 절전·최소화로
+# 타이머가 멈추는 일이 잦아서 종료 판단의 유일한 근거로 쓰면 창이 열려 있는데 서버가 죽는다.
+IDLE_SECONDS_NO_WINDOW_PROCESS = 300  # 창 프로세스를 모를 때(기본 브라우저)만 쓰는 긴 유예 시간
+WINDOW_EXIT_GRACE_SECONDS = 15  # 창 프로세스가 끝난 뒤 새 창(재실행)을 기다리는 시간
+FIRST_PING_SECONDS = 180  # 창이 아예 열리지 않은 경우의 안전장치
 SMOKE_LOG = Path(tempfile.gettempdir()) / "newsclip-smoke.log"
 
 
@@ -41,6 +44,22 @@ def redirect_output_when_windowed() -> None:
         log = open(data_dir() / "app.log", "a", encoding="utf-8", buffering=1)  # noqa: SIM115
         sys.stdout = sys.stdout or log
         sys.stderr = sys.stderr or log
+
+
+def enable_crash_log() -> None:
+    """프로세스가 비정상 종료(네이티브 충돌)할 때 원인이 app.log 에 남도록 한다."""
+    import faulthandler
+    import logging
+
+    try:
+        log = open(data_dir() / "app.log", "a", encoding="utf-8", buffering=1)  # noqa: SIM115
+        faulthandler.enable(file=log)
+        logging.basicConfig(
+            level=logging.INFO, stream=log, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+        )
+        log.write(f"--- 시작 {time.strftime('%Y-%m-%d %H:%M:%S')} ---\n")
+    except OSError:
+        pass
 
 
 def port_open(port: int) -> bool:
@@ -89,11 +108,12 @@ def find_app_browser() -> str | None:
     return str(mac) if mac.exists() else None
 
 
-def open_window(url: str) -> None:
+def open_window(url: str) -> subprocess.Popen | None:
+    """앱 창을 연다. 창 프로세스를 돌려주며, 기본 브라우저로 연 경우에는 None."""
     browser = find_app_browser()
     if browser:
         profile = data_dir() / "window-profile"  # 별도 프로필 → 평소 브라우저와 섞이지 않는다
-        subprocess.Popen(  # noqa: S603
+        return subprocess.Popen(  # noqa: S603
             [
                 browser,
                 f"--app={url}",
@@ -107,18 +127,60 @@ def open_window(url: str) -> None:
         import webbrowser
 
         webbrowser.open(url)
+        return None
 
 
-def watch_and_exit(state: AppState, idle: float = IDLE_SECONDS) -> None:
-    """화면 신호(ping)가 한 번이라도 왔고 이후 끊겨 유예 시간이 지나면 프로세스를 끝낸다."""
+def should_exit(
+    *,
+    window_alive: bool | None,
+    window_ended_for: float,
+    pinged: bool,
+    since_last_ping: float,
+    since_start: float,
+) -> bool:
+    """서버를 끝낼지 판단한다 (테스트하기 쉽도록 순수 함수).
+
+    window_alive: 앱 창 프로세스가 살아 있는지 (None = 프로세스를 모름)
+    window_ended_for: 창 프로세스가 끝난 지 몇 초째인지
+    """
+    if window_alive is True:
+        return False  # 창이 열려 있으면 신호가 끊겨도 종료하지 않는다 (절전 복귀·최소화 대비)
+    if window_alive is False:
+        # 창 프로세스가 끝났어도 화면 신호가 최근에 왔다면 창이 열려 있는 것이다
+        recently_alive = pinged and since_last_ping < 2 * WINDOW_EXIT_GRACE_SECONDS
+        return window_ended_for > WINDOW_EXIT_GRACE_SECONDS and not recently_alive
+    # 창 프로세스를 모르는 경우: 화면 신호로만 판단한다
+    if pinged:
+        return since_last_ping > IDLE_SECONDS_NO_WINDOW_PROCESS
+    return since_start > FIRST_PING_SECONDS
+
+
+def watch_and_exit(state: AppState, window: dict) -> None:
+    """앱 창이 닫히면(또는 신호가 오래 끊기면) 프로세스를 끝낸다. window['proc'] 는 앱 창 프로세스."""
     started = time.monotonic()
+    proc_seen_at: float | None = None
+    ended_at: float | None = None
     while True:
         time.sleep(2)
         now = time.monotonic()
-        if state.pinged:
-            if now - state.last_ping > idle:
-                os._exit(0)
-        elif now - started > FIRST_PING_SECONDS:
+        proc = window.get("proc")
+        alive: bool | None = None
+        if proc is not None:
+            proc_seen_at = proc_seen_at or now
+            alive = proc.poll() is None
+            if alive:
+                ended_at = None
+            elif ended_at is None:
+                ended_at = now
+            if alive is False and ended_at - proc_seen_at < 10:
+                alive = None  # 곧바로 끝났다면 다른 프로세스로 넘긴 것(핸드오프) — 신호로만 판단
+        if should_exit(
+            window_alive=alive,
+            window_ended_for=(now - ended_at) if ended_at else 0.0,
+            pinged=state.pinged,
+            since_last_ping=now - state.last_ping,
+            since_start=now - started,
+        ):
             os._exit(0)
 
 
@@ -165,14 +227,24 @@ def main(argv: list[str] | None = None) -> int:
     if "--smoke" in argv:
         return smoke()
     redirect_output_when_windowed()
+    enable_crash_log()
     port, reuse = pick_port()
     url = f"http://localhost:{port}"
     if reuse:  # 이미 떠 있는 앱이 있으면 창만 새로 연다
         open_window(url)
         return 0
     server = make_server(port)
-    threading.Thread(target=open_window, args=(url,), daemon=True).start()
-    threading.Thread(target=watch_and_exit, args=(server.app_state,), daemon=True).start()  # type: ignore[attr-defined]
+    window: dict = {"proc": None}
+
+    def launch() -> None:
+        window["proc"] = open_window(url)
+
+    threading.Thread(target=launch, daemon=True).start()
+    threading.Thread(
+        target=watch_and_exit,
+        args=(server.app_state, window),  # type: ignore[attr-defined]
+        daemon=True,
+    ).start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:

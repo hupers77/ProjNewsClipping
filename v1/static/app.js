@@ -5,11 +5,17 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
 async function api(path, body) {
-  const res = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-NewsClip": "1" },
-    body: JSON.stringify(body || {}),
-  });
+  let res;
+  try {
+    res = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-NewsClip": "1" },
+      body: JSON.stringify(body || {}),
+    });
+  } catch (_) {
+    showDisconnected();
+    throw new Error("앱 서버와 연결할 수 없습니다. 앱을 다시 실행해 주세요.");
+  }
   let data = {};
   try { data = await res.json(); } catch (_) { /* 본문 없음 */ }
   if (!res.ok || data.error) throw new Error(data.error || `요청 실패 (${res.status})`);
@@ -27,9 +33,38 @@ function toast(msg) {
 
 function fail(err) { toast("⚠ " + (err && err.message ? err.message : err)); }
 
-/* 창 닫힘 감지: 서버가 이 신호가 끊기면 스스로 종료한다 (데스크톱 앱) */
-setInterval(() => { fetch("/api/ping", { method: "POST", headers: { "X-NewsClip": "1" } }).catch(() => {}); }, 5000);
-fetch("/api/ping", { method: "POST", headers: { "X-NewsClip": "1" } }).catch(() => {});
+/* 서버 신호(ping): 연결이 끊기면 사용자에게 알린다 */
+let pingFails = 0;
+let lastVisible = Date.now();
+function showDisconnected() {
+  if ($("#disconnected")) return;
+  const bar = document.createElement("div");
+  bar.id = "disconnected";
+  bar.className = "notice err";
+  bar.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:60;text-align:center;border-radius:0";
+  bar.textContent = "⚠ 앱 서버와 연결이 끊어졌습니다. 앱을 닫고 바탕화면 아이콘으로 다시 실행해 주세요.";
+  document.body.prepend(bar);
+}
+async function ping() {
+  try {
+    await fetch("/api/ping", { method: "POST", headers: { "X-NewsClip": "1" } });
+    pingFails = 0;
+    const bar = $("#disconnected");
+    if (bar) bar.remove();
+  } catch (_) {
+    if (++pingFails >= 2) showDisconnected();
+  }
+}
+setInterval(ping, 5000);
+ping();
+// 뒤로 가기 등으로 오래된 화면(캐시)이 되살아나면 서버의 최신 상태로 다시 읽는다
+window.addEventListener("pageshow", (ev) => { if (ev.persisted) location.reload(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { lastVisible = Date.now(); return; }
+  ping();
+  // 절전·최소화에서 오래 있다 돌아오면 후보 리스트를 최신 상태로 다시 읽는다 (결정은 즉시 저장되므로 안전)
+  if (document.body.dataset.page === "candidates" && Date.now() - lastVisible > 120000) location.reload();
+});
 
 /* 사이드바 접기 */
 (function () {
