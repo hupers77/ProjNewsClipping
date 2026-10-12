@@ -152,7 +152,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._html(pages.guide_page(self.state.guide_py, (PROJECT_ROOT / "v1",)))
             if path.startswith("/static/"):
                 return self._static(path[len("/static/") :])
-            if path == "/api/collect/status":
+            if path == "/api/news/refresh/status":
                 with self.state.lock:
                     return self._json(dict(self.state.job))
             if path == "/health":
@@ -211,9 +211,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._error(HTTPStatus.FORBIDDEN, "허용되지 않은 출처입니다")
         path = urlsplit(self.path).path
         routes = {
-            "/api/ping": self._api_ping,
+            "/api/alive": self._api_ping,
             "/api/decision": self._api_decision,
-            "/api/collect": self._api_collect,
+            "/api/news/refresh": self._api_collect,
             "/api/make-email": self._api_make_email,
             "/api/email/save": self._api_email_save,
             "/api/email/preview": self._api_email_preview,

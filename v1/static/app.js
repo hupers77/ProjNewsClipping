@@ -18,6 +18,12 @@ async function api(path, body, opts = {}) {
       break;
     } catch (_) {
       if (i === attempts - 1) {
+        // 서버가 살아 있는데 이 요청만 실패했다면 브라우저 확장 프로그램(광고·추적 차단)이 막은 것이다
+        let alive = false;
+        try { alive = (await fetch("/health", { cache: "no-store" })).ok; } catch (_) { /* 서버 없음 */ }
+        if (alive) {
+          throw new Error("브라우저가 이 요청을 막았습니다(광고·추적 차단 확장 프로그램 등). 이 사이트(localhost)에서는 차단을 꺼 주세요.");
+        }
         showDisconnected();
         throw new Error("앱 서버와 연결할 수 없습니다. 앱을 다시 실행해 주세요.");
       }
@@ -55,7 +61,7 @@ function showDisconnected() {
 }
 async function ping() {
   try {
-    await fetch("/api/ping", { method: "POST", headers: { "X-NewsClip": "1" } });
+    await fetch("/api/alive", { method: "POST", headers: { "X-NewsClip": "1" } });
     pingFails = 0;
     const bar = $("#disconnected");
     if (bar) bar.remove();
@@ -164,7 +170,7 @@ function initCandidates() {
   const prog = $("#progress");
   async function pollCollect() {
     try {
-      const st = await (await fetch("/api/collect/status")).json();
+      const st = await (await fetch("/api/news/refresh/status")).json();
       prog.textContent = "⏳ " + (st.message || "수집 중…");
       if (st.running) { setTimeout(pollCollect, 700); return; }
       prog.classList.remove("on");
@@ -178,7 +184,7 @@ function initCandidates() {
     collectBtn.disabled = true;
     prog.classList.add("on");
     prog.textContent = "⏳ 수집을 시작합니다…";
-    try { await api("/api/collect", {}, { retry: true }); pollCollect(); } catch (e) { fail(e); collectBtn.disabled = false; prog.classList.remove("on"); }
+    try { await api("/api/news/refresh", {}, { retry: true }); pollCollect(); } catch (e) { fail(e); collectBtn.disabled = false; prog.classList.remove("on"); }
   });
   if ($("#collect-running")) { collectBtn.disabled = true; prog.classList.add("on"); pollCollect(); }
 

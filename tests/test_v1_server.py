@@ -94,13 +94,13 @@ def test_guide_page_is_rendered_from_guide_py(server, tmp_path):
 
 def test_post_requires_custom_header_and_local_origin(server):
     req = urllib.request.Request(
-        server + "/api/collect", b"{}", {"Content-Type": "application/json"}, method="POST"
+        server + "/api/news/refresh", b"{}", {"Content-Type": "application/json"}, method="POST"
     )
     with pytest.raises(urllib.error.HTTPError) as exc:
         urllib.request.urlopen(req, timeout=5)
     assert exc.value.code == 403
-    assert post(server, "/api/ping", headers={"Origin": "https://evil.example"})[0] == 403
-    assert post(server, "/api/ping", headers={"Origin": "http://localhost:1"})[0] == 200
+    assert post(server, "/api/alive", headers={"Origin": "https://evil.example"})[0] == 403
+    assert post(server, "/api/alive", headers={"Origin": "http://localhost:1"})[0] == 200
 
 
 def test_foreign_host_header_is_rejected(server):
@@ -199,11 +199,11 @@ def test_collect_job_runs_and_reports(server, monkeypatch):
         return collector.CollectReport(results=[collector.SourceResult("x", 1, 1, "")])
 
     monkeypatch.setattr(collector, "collect", fake_collect)
-    assert post(server, "/api/collect")[1]["started"] is True
+    assert post(server, "/api/news/refresh")[1]["started"] is True
     import time
 
     for _ in range(50):
-        status = json.loads(get(server, "/api/collect/status")[1])
+        status = json.loads(get(server, "/api/news/refresh/status")[1])
         if not status["running"]:
             break
         time.sleep(0.05)
@@ -219,7 +219,7 @@ def test_server_survives_many_concurrent_requests(server):
     def hammer() -> None:
         for _ in range(30):
             try:
-                urllib.request.urlopen(server + "/api/collect/status", timeout=10).read()
+                urllib.request.urlopen(server + "/api/news/refresh/status", timeout=10).read()
             except Exception as exc:  # noqa: BLE001
                 errors.append(repr(exc))
 
@@ -227,3 +227,29 @@ def test_server_survives_many_concurrent_requests(server):
     [t.start() for t in threads]
     [t.join() for t in threads]
     assert errors == []
+
+
+def test_endpoint_names_avoid_ad_blocker_patterns():
+    """'/collect', '/ping', '/track' 같은 분석(추적) 엔드포인트처럼 보이는 이름은 광고 차단기가 막는다."""
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent / "v1"
+    text = (root / "newsclip_v1" / "server.py").read_text(encoding="utf-8") + (
+        root / "static" / "app.js"
+    ).read_text(encoding="utf-8")
+    paths = set(re.findall(r'"(/api/[A-Za-z0-9_/\-]+)"', text))
+    assert paths, "엔드포인트를 찾지 못했습니다"
+    risky = {
+        "collect",
+        "ping",
+        "track",
+        "analytics",
+        "beacon",
+        "telemetry",
+        "stats",
+        "event",
+        "log",
+    }
+    bad = sorted(p for p in paths if risky & set(p.strip("/").split("/")))
+    assert bad == [], f"광고 차단기에 걸릴 수 있는 이름: {bad}"
